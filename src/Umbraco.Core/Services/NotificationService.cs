@@ -58,54 +58,7 @@ namespace Umbraco.Core.Services
             if (entity is IContent == false)
                 throw new NotSupportedException();
 
-            var content = (IContent) entity;
-
-            // lazily get previous version
-            IContentBase prevVersion = null;
-
-            // do not load *all* users in memory at once
-            // do not load notifications *per user* (N+1 select)
-            // cannot load users & notifications in 1 query (combination btw User2AppDto and User2NodeNotifyDto)
-            // => get batches of users, get all their notifications in 1 query
-            // re. users:
-            //  users being (dis)approved = not an issue, filtered in memory not in SQL
-            //  users being modified or created = not an issue, ordering by ID, as long as we don't *insert* low IDs
-            //  users being deleted = not an issue for GetNextUsers
-            var id = 0;
-            var nodeIds = content.Path.Split(',').Select(int.Parse).ToArray();
-            const int pagesz = 400; // load batches of 400 users
-            do
-            {
-                // users are returned ordered by id, notifications are returned ordered by user id
-                var users = ((UserService) _userService).GetNextUsers(id, pagesz).Where(x => x.IsApproved).ToList();
-                var notifications = GetUsersNotifications(users.Select(x => x.Id), action, nodeIds, Constants.ObjectTypes.DocumentGuid).ToList();
-                if (notifications.Count == 0) break;
-
-                var i = 0;
-                foreach (var user in users)
-                {
-                    // continue if there's no notification for this user
-                    if (notifications[i].UserId != user.Id) continue; // next user
-
-                    // lazy load prev version
-                    if (prevVersion == null)
-                    {
-                        prevVersion = GetPreviousVersion(entity.Id);
-                    }
-
-                    // queue notification
-                    var req = CreateNotificationRequest(operatingUser, user, content, prevVersion, actionName, http, createSubject, createBody);
-                    Enqueue(req);
-
-                    // skip other notifications for this user
-                    while (i < notifications.Count && notifications[i++].UserId == user.Id) ;
-                    if (i >= notifications.Count) break; // break if no more notifications
-                }
-
-                // load more users if any
-                id = users.Count == pagesz ? users.Last().Id + 1 : -1;
-
-            } while (id > 0);
+            SendNotifications(operatingUser, new[] { (IContent)entity }, action, actionName, http, createSubject, createBody);
         }
 
         /// <summary>
@@ -154,7 +107,14 @@ namespace Umbraco.Core.Services
             // lazily get versions
             var prevVersionDictionary = new Dictionary<int, IContentBase>();
 
-            // see notes above
+            // do not load *all* users in memory at once
+            // do not load notifications *per user* (N+1 select)
+            // cannot load users & notifications in 1 query (combination btw User2AppDto and User2NodeNotifyDto)
+            // => get batches of users, get all their notifications in 1 query
+            // re. users:
+            //  users being (dis)approved = not an issue, filtered in memory not in SQL
+            //  users being modified or created = not an issue, ordering by ID, as long as we don't *insert* low IDs
+            //  users being deleted = not an issue for GetNextUsers
             var id = 0;
             const int pagesz = 400; // load batches of 400 users
             do
@@ -206,9 +166,13 @@ namespace Umbraco.Core.Services
 
         private IEnumerable<Notification> GetUsersNotifications(IEnumerable<int> userIds, string action, IEnumerable<int> nodeIds, Guid objectType)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            return repository.GetUsersNotifications(userIds, action, nodeIds, objectType);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                var ret = repository.GetUsersNotifications(userIds, action, nodeIds, objectType);
+                uow.Commit();
+                return ret;
+            }
         }
 
         /// <summary>
@@ -218,9 +182,13 @@ namespace Umbraco.Core.Services
         /// <returns></returns>
         public IEnumerable<Notification> GetUserNotifications(IUser user)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            return repository.GetUserNotifications(user);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                var ret = repository.GetUserNotifications(user);
+                uow.Commit();
+                return ret;
+            }
         }
 
         /// <summary>
@@ -256,9 +224,13 @@ namespace Umbraco.Core.Services
         /// <param name="entity"></param>
         public IEnumerable<Notification> GetEntityNotifications(IEntity entity)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            return repository.GetEntityNotifications(entity);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                var ret= repository.GetEntityNotifications(entity);
+                uow.Commit();
+                return ret;
+            }
         }
 
         /// <summary>
@@ -267,9 +239,12 @@ namespace Umbraco.Core.Services
         /// <param name="entity"></param>
         public void DeleteNotifications(IEntity entity)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            repository.DeleteNotifications(entity);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                repository.DeleteNotifications(entity);
+                uow.Commit();
+            }
         }
 
         /// <summary>
@@ -278,9 +253,12 @@ namespace Umbraco.Core.Services
         /// <param name="user"></param>
         public void DeleteNotifications(IUser user)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            repository.DeleteNotifications(user);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                repository.DeleteNotifications(user);
+                uow.Commit();
+            }
         }
 
         /// <summary>
@@ -290,9 +268,12 @@ namespace Umbraco.Core.Services
         /// <param name="entity"></param>
         public void DeleteNotifications(IUser user, IEntity entity)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            repository.DeleteNotifications(user, entity);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                repository.DeleteNotifications(user, entity);
+                uow.Commit();
+            }
         }
 
         /// <summary>
@@ -304,9 +285,13 @@ namespace Umbraco.Core.Services
         /// <returns></returns>
         public Notification CreateNotification(IUser user, IEntity entity, string action)
         {
-            var uow = _uowProvider.GetUnitOfWork();
-            var repository = new NotificationsRepository(uow);
-            return repository.CreateNotification(user, entity, action);
+            using (var uow = _uowProvider.GetUnitOfWork())
+            {
+                var repository = new NotificationsRepository(uow);
+                var ret = repository.CreateNotification(user, entity, action);
+                uow.Commit();
+                return ret;
+            }
         }
 
         #region private methods
