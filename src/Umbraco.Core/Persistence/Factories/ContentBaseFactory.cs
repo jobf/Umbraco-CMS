@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence.Dtos;
+using Umbraco.Core.Persistence.Repositories;
 
 namespace Umbraco.Core.Persistence.Factories
 {
@@ -45,10 +48,8 @@ namespace Umbraco.Core.Persistence.Factories
 
                 content.Published = dto.Published;
                 content.Edited = dto.Edited;
-                content.ExpireDate = dto.ExpiresDate;
-                content.ReleaseDate = dto.ReleaseDate;
 
-                // fixme - shall we get published infos or not?
+                // TODO: shall we get published infos or not?
                 //if (dto.Published)
                 if (publishedVersionDto != null)
                 {
@@ -88,7 +89,7 @@ namespace Umbraco.Core.Persistence.Factories
                 content.Key = nodeDto.UniqueId;
                 content.VersionId = contentVersionDto.Id;
 
-                // fixme missing names?
+                // TODO: missing names?
 
                 content.Path = nodeDto.Path;
                 content.Level = nodeDto.Level;
@@ -129,7 +130,7 @@ namespace Umbraco.Core.Persistence.Factories
                 content.Key = nodeDto.UniqueId;
                 content.VersionId = contentVersionDto.Id;
 
-                // fixme missing names?
+                // TODO: missing names?
 
                 content.Path = nodeDto.Path;
                 content.Level = nodeDto.Level;
@@ -142,7 +143,7 @@ namespace Umbraco.Core.Persistence.Factories
                 content.CreateDate = nodeDto.CreateDate;
                 content.UpdateDate = contentVersionDto.VersionDate;
 
-                content.ProviderUserKey = content.Key; // fixme explain
+                content.ProviderUserKey = content.Key; // The `ProviderUserKey` is a membership provider thing
 
                 // reset dirty initial properties (U4-1946)
                 content.ResetDirtyProperties(false);
@@ -155,7 +156,7 @@ namespace Umbraco.Core.Persistence.Factories
         }
 
         /// <summary>
-        /// Buils a dto from an IContent item.
+        /// Builds a dto from an IContent item.
         /// </summary>
         public static DocumentDto BuildDto(IContent entity, Guid objectType)
         {
@@ -165,9 +166,6 @@ namespace Umbraco.Core.Persistence.Factories
             {
                 NodeId = entity.Id,
                 Published = entity.Published,
-                ReleaseDate = entity.ReleaseDate,
-                ExpiresDate = entity.ExpireDate,
-
                 ContentDto = contentDto,
                 DocumentVersionDto = BuildDocumentVersionDto(entity, contentDto)
             };
@@ -175,8 +173,21 @@ namespace Umbraco.Core.Persistence.Factories
             return dto;
         }
 
+        public static IEnumerable<(ContentSchedule Model, ContentScheduleDto Dto)> BuildScheduleDto(IContent entity, ILanguageRepository languageRepository)
+        {
+            return entity.ContentSchedule.FullSchedule.Select(x =>
+                (x, new ContentScheduleDto
+                {
+                    Action = x.Action.ToString(),
+                    Date = x.Date,
+                    NodeId = entity.Id,
+                    LanguageId = languageRepository.GetIdByIsoCode(x.Culture, false),
+                    Id = x.Id
+                }));
+        }
+
         /// <summary>
-        /// Buils a dto from an IMedia item.
+        /// Builds a dto from an IMedia item.
         /// </summary>
         public static MediaDto BuildDto(IMedia entity)
         {
@@ -193,7 +204,7 @@ namespace Umbraco.Core.Persistence.Factories
         }
 
         /// <summary>
-        /// Buils a dto from an IMember item.
+        /// Builds a dto from an IMember item.
         /// </summary>
         public static MemberDto BuildDto(IMember entity)
         {
@@ -271,7 +282,7 @@ namespace Umbraco.Core.Persistence.Factories
             var dto = new DocumentVersionDto
             {
                 Id = entity.VersionId,
-                TemplateId = entity.Template?.Id,
+                TemplateId = entity.TemplateId,
                 Published = false, // always building the current, unpublished one
 
                 ContentVersionDto = BuildContentVersionDto(entity, contentDto)
@@ -283,7 +294,7 @@ namespace Umbraco.Core.Persistence.Factories
         private static MediaVersionDto BuildMediaVersionDto(IMedia entity, ContentDto contentDto)
         {
             // try to get a path from the string being stored for media
-            // fixme - only considering umbracoFile ?!
+            // TODO: only considering umbracoFile
 
             TryMatch(entity.GetValue<string>("umbracoFile"), out var path);
 
@@ -298,10 +309,13 @@ namespace Umbraco.Core.Persistence.Factories
             return dto;
         }
 
-        // fixme - this should NOT be here?!
+        // TODO: this should NOT be here?!
         // more dark magic ;-(
         internal static bool TryMatch(string text, out string path)
         {
+            // In v8 we should allow exposing this via the property editor in a much nicer way so that the property editor
+            // can tell us directly what any URL is for a given property if it contains an asset
+
             path = null;
             if (string.IsNullOrWhiteSpace(text)) return false;
 

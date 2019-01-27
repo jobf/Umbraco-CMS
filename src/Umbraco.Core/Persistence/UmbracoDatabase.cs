@@ -67,6 +67,24 @@ namespace Umbraco.Core.Persistence
         /// <inheritdoc />
         public ISqlContext SqlContext { get; }
 
+        #region Temp
+
+        // work around NPoco issue https://github.com/schotime/NPoco/issues/517 while we wait for the fix
+        public override DbCommand CreateCommand(DbConnection connection, CommandType commandType, string sql, params object[] args)
+        {
+            var command = base.CreateCommand(connection, commandType, sql, args);
+
+            if (!DatabaseType.IsSqlCe()) return command;
+
+            foreach (DbParameter parameter in command.Parameters)
+                if (parameter.Value == DBNull.Value)
+                    parameter.DbType = DbType.String;
+
+            return command;
+        }
+
+        #endregion
+
         #region Testing, Debugging and Troubleshooting
 
         private bool _enableCount;
@@ -141,7 +159,7 @@ namespace Umbraco.Core.Persistence
 
         #region OnSomething
 
-        // fixme.poco - has new interceptors to replace OnSomething?
+        // TODO: has new interceptors to replace OnSomething?
 
         protected override DbConnection OnConnectionOpened(DbConnection connection)
         {
@@ -149,15 +167,7 @@ namespace Umbraco.Core.Persistence
 
 #if DEBUG_DATABASES
             // determines the database connection SPID for debugging
-            if (DatabaseType.IsMySql())
-            {
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT CONNECTION_ID()";
-                    _spid = Convert.ToInt32(command.ExecuteScalar());
-                }
-            }
-            else if (DatabaseType.IsSqlServer())
+            if (DatabaseType.IsSqlServer())
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -208,7 +218,7 @@ namespace Umbraco.Core.Persistence
                 cmd.CommandTimeout = cmd.Connection.ConnectionTimeout;
 
             if (EnableSqlTrace)
-                _logger.Debug<UmbracoDatabase>("SQL Trace:\r\n{Sql}", CommandToString(cmd).Replace("{", "{{").Replace("}", "}}")); // fixme these escapes should be builtin
+                _logger.Debug<UmbracoDatabase>("SQL Trace:\r\n{Sql}", CommandToString(cmd).Replace("{", "{{").Replace("}", "}}")); // TODO: these escapes should be builtin
 
 #if DEBUG_DATABASES
             // detects whether the command is already in use (eg still has an open reader...)
@@ -228,24 +238,13 @@ namespace Umbraco.Core.Persistence
 
         private string CommandToString(string sql, object[] args)
         {
-            var sb = new StringBuilder();
+            var text = new StringBuilder();
 #if DEBUG_DATABASES
-                sb.Append(InstanceId);
-                sb.Append(": ");
+                text.Append(InstanceId);
+                text.Append(": ");
 #endif
-            sb.Append(sql);
-            if (args.Length > 0)
-                sb.Append(" --");
-            var i = 0;
-            foreach (var arg in args)
-            {
-                sb.Append(" @");
-                sb.Append(i++);
-                sb.Append(":");
-                sb.Append(arg);
-            }
-
-            return sb.ToString();
+            NPocoSqlExtensions.ToText(sql, args, text);
+            return text.ToString();
         }
 
         protected override void OnExecutedCommand(DbCommand cmd)

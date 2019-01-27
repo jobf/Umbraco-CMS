@@ -13,7 +13,6 @@ using Umbraco.Web.Composing;
 using Umbraco.Web.Editors;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
-using Umbraco.Web.WebServices;
 
 namespace Umbraco.Web
 {
@@ -178,7 +177,7 @@ namespace Umbraco.Web
         public static string GetCacheBustHash()
         {
             //make a hash of umbraco and client dependency version
-            //in case the user bypasses the installer and just bumps the web.config or clientdep config
+            //in case the user bypasses the installer and just bumps the web.config or client dependency config
 
             //if in debug mode, always burst the cache
             if (GlobalSettings.DebugMode)

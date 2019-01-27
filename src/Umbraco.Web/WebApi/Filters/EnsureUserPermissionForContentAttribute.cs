@@ -9,6 +9,8 @@ using Umbraco.Web.Editors;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Web.Actions;
+using Umbraco.Core.Security;
+using System.Net;
 
 namespace Umbraco.Web.WebApi.Filters
 {
@@ -34,6 +36,12 @@ namespace Umbraco.Web.WebApi.Filters
         public EnsureUserPermissionForContentAttribute(int nodeId)
         {
             _nodeId = nodeId;
+        }
+
+        public EnsureUserPermissionForContentAttribute(int nodeId, char permissionToCheck)
+            : this(nodeId)
+        {
+            _permissionToCheck = permissionToCheck;
         }
 
         public EnsureUserPermissionForContentAttribute(string paramName)
@@ -81,13 +89,13 @@ namespace Umbraco.Web.WebApi.Filters
                     }
                     else if (Udi.TryParse(argument, true, out Udi udi))
                     {
-                        //fixme: inject? we can't because this is an attribute but we could provide ctors and empty ctors that pass in the required services
+                        // TODO: inject? we can't because this is an attribute but we could provide ctors and empty ctors that pass in the required services
                         nodeId = Current.Services.EntityService.GetId(udi).Result;
                     }
                     else
                     {
                         Guid.TryParse(argument, out Guid key);
-                        //fixme: inject? we can't because this is an attribute but we could provide ctors and empty ctors that pass in the required services
+                        // TODO: inject? we can't because this is an attribute but we could provide ctors and empty ctors that pass in the required services
                         nodeId = Current.Services.EntityService.GetId(key, UmbracoObjectTypes.Document).Result;
                     }
                 }
@@ -108,25 +116,27 @@ namespace Umbraco.Web.WebApi.Filters
                 nodeId = _nodeId.Value;
             }
 
-            if (ContentController.CheckPermissions(
-                actionContext.Request.Properties,
-                //fixme: inject? we can't because this is an attribute but we could provide ctors and empty ctors that pass in the required services
+            var permissionResult = ContentPermissionsHelper.CheckPermissions(nodeId,
                 Current.UmbracoContext.Security.CurrentUser,
                 Current.Services.UserService,
                 Current.Services.ContentService,
                 Current.Services.EntityService,
-                nodeId, _permissionToCheck.HasValue ? new[]{_permissionToCheck.Value}: null))
-            {
-                base.OnActionExecuting(actionContext);
-            }
-            else
-            {
+                out var contentItem,
+                _permissionToCheck.HasValue ? new[] { _permissionToCheck.Value } : null);
+
+            if (permissionResult == ContentPermissionsHelper.ContentAccess.NotFound)
+                throw new HttpResponseException(HttpStatusCode.NotFound);
+
+            if (permissionResult == ContentPermissionsHelper.ContentAccess.Denied)
                 throw new HttpResponseException(actionContext.Request.CreateUserNoAccessResponse());
+
+            if (contentItem != null)
+            {
+                //store the content item in request cache so it can be resolved in the controller without re-looking it up
+                actionContext.Request.Properties[typeof(IContent).ToString()] = contentItem;
             }
 
+            base.OnActionExecuting(actionContext);
         }
-
-
-
     }
 }

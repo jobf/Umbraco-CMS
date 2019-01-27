@@ -26,11 +26,11 @@ namespace Umbraco.Core.Services.Implement
         private readonly IAuditRepository _auditRepository;
         private readonly IEntityRepository _entityRepository;
 
-        private readonly MediaFileSystem _mediaFileSystem;
+        private readonly IMediaFileSystem _mediaFileSystem;
 
         #region Constructors
 
-        public MediaService(IScopeProvider provider, MediaFileSystem mediaFileSystem, ILogger logger, IEventMessagesFactory eventMessagesFactory,
+        public MediaService(IScopeProvider provider, IMediaFileSystem mediaFileSystem, ILogger logger, IEventMessagesFactory eventMessagesFactory,
             IMediaRepository mediaRepository, IAuditRepository auditRepository, IMediaTypeRepository mediaTypeRepository,
             IEntityRepository entityRepository)
             : base(provider, logger, eventMessagesFactory)
@@ -451,7 +451,7 @@ namespace Umbraco.Core.Services.Implement
         /// <returns>An Enumerable list of <see cref="IMedia"/> objects</returns>
         public IEnumerable<IMedia> GetAncestors(int id)
         {
-            // intentionnaly not locking
+            // intentionally not locking
             var media = GetById(id);
             return GetAncestors(media);
         }
@@ -547,7 +547,7 @@ namespace Umbraco.Core.Services.Implement
         /// <returns>Parent <see cref="IMedia"/> object</returns>
         public IMedia GetParent(int id)
         {
-            // intentionnaly not locking
+            // intentionally not locking
             var media = GetById(id);
             return GetParent(media);
         }
@@ -757,8 +757,7 @@ namespace Umbraco.Core.Services.Implement
                 var args = new DeleteEventArgs<IMedia>(c, false); // raise event & get flagged files
                 scope.Events.Dispatch(Deleted, this, args);
 
-                _mediaFileSystem.DeleteFiles(args.MediaFilesToDelete, // remove flagged files
-                    (file, e) => Logger.Error<MediaService>(e, "An error occurred while deleting file attached to nodes: {File}", file));
+                // media files deleted by QueuingEventDispatcher
             }
 
             const int pageSize = 500;
@@ -774,8 +773,7 @@ namespace Umbraco.Core.Services.Implement
             DoDelete(media);
         }
 
-        //TODO:
-        // both DeleteVersions methods below have an issue. Sort of. They do NOT take care of files the way
+        //TODO: both DeleteVersions methods below have an issue. Sort of. They do NOT take care of files the way
         // Delete does - for a good reason: the file may be referenced by other, non-deleted, versions. BUT,
         // if that's not the case, then the file will never be deleted, because when we delete the media,
         // the version referencing the file will not be there anymore. SO, we can leak files.
@@ -883,12 +881,14 @@ namespace Umbraco.Core.Services.Implement
             {
                 scope.WriteLock(Constants.Locks.MediaTree);
 
-                // fixme - missing 7.6 "ensure valid path" thing here?
+                // TODO: missing 7.6 "ensure valid path" thing here?
                 // but then should be in PerformMoveLocked on every moved item?
 
                 var originalPath = media.Path;
 
-                if (scope.Events.DispatchCancelable(Trashing, this, new MoveEventArgs<IMedia>(new MoveEventInfo<IMedia>(media, originalPath, Constants.System.RecycleBinMedia)), nameof(Trashing)))
+                var moveEventInfo = new MoveEventInfo<IMedia>(media, originalPath, Constants.System.RecycleBinMedia);
+                var moveEventArgs = new MoveEventArgs<IMedia>(true, evtMsgs, moveEventInfo);
+                if (scope.Events.DispatchCancelable(Trashing, this, moveEventArgs, nameof(Trashing)))
                 {
                     scope.Complete();
                     return OperationResult.Attempt.Cancel(evtMsgs);
@@ -899,8 +899,9 @@ namespace Umbraco.Core.Services.Implement
                 scope.Events.Dispatch(TreeChanged, this, new TreeChange<IMedia>(media, TreeChangeTypes.RefreshBranch).ToEventArgs());
                 var moveInfo = moves.Select(x => new MoveEventInfo<IMedia>(x.Item1, x.Item2, x.Item1.ParentId))
                     .ToArray();
-
-                scope.Events.Dispatch(Trashed, this, new MoveEventArgs<IMedia>(false, evtMsgs, moveInfo), nameof(Trashed));
+                moveEventArgs.MoveInfoCollection = moveInfo;
+                moveEventArgs.CanCancel = false;
+                scope.Events.Dispatch(Trashed, this, moveEventArgs, nameof(Trashed));
                 Audit(AuditType.Move, userId, media.Id, "Move Media to recycle bin");
 
                 scope.Complete();
@@ -915,13 +916,15 @@ namespace Umbraco.Core.Services.Implement
         /// <param name="media">The <see cref="IMedia"/> to move</param>
         /// <param name="parentId">Id of the Media's new Parent</param>
         /// <param name="userId">Id of the User moving the Media</param>
-        public void Move(IMedia media, int parentId, int userId = 0)
+        public Attempt<OperationResult> Move(IMedia media, int parentId, int userId = 0)
         {
+            var evtMsgs = EventMessagesFactory.Get();
+
             // if moving to the recycle bin then use the proper method
             if (parentId == Constants.System.RecycleBinMedia)
             {
                 MoveToRecycleBin(media, userId);
-                return;
+                return OperationResult.Attempt.Succeed(evtMsgs);
             }
 
             var moves = new List<Tuple<IMedia, string>>();
@@ -935,11 +938,11 @@ namespace Umbraco.Core.Services.Implement
                     throw new InvalidOperationException("Parent does not exist or is trashed."); // causes rollback // causes rollback
 
                 var moveEventInfo = new MoveEventInfo<IMedia>(media, media.Path, parentId);
-                var moveEventArgs = new MoveEventArgs<IMedia>(moveEventInfo);
+                var moveEventArgs = new MoveEventArgs<IMedia>(true, evtMsgs, moveEventInfo);
                 if (scope.Events.DispatchCancelable(Moving, this, moveEventArgs, nameof(Moving)))
                 {
                     scope.Complete();
-                    return;
+                    return OperationResult.Attempt.Cancel(evtMsgs);
                 }
 
                 // if media was trashed, and since we're not moving to the recycle bin,
@@ -964,6 +967,7 @@ namespace Umbraco.Core.Services.Implement
                 Audit(AuditType.Move, userId, media.Id);
                 scope.Complete();
             }
+            return OperationResult.Attempt.Succeed(evtMsgs);
         }
 
         // MUST be called from within WriteLock
@@ -1026,7 +1030,7 @@ namespace Umbraco.Core.Services.Implement
         {
             var nodeObjectType = Constants.ObjectTypes.Media;
             var deleted = new List<IMedia>();
-            var evtMsgs = EventMessagesFactory.Get(); // todo - and then?
+            var evtMsgs = EventMessagesFactory.Get(); // TODO: and then?
 
             using (var scope = ScopeProvider.CreateScope())
             {
@@ -1040,7 +1044,7 @@ namespace Umbraco.Core.Services.Implement
                 // v7 EmptyingRecycleBin and EmptiedRecycleBin events are greatly simplified since
                 // each deleted items will have its own deleting/deleted events. so, files and such
 
-                // emptying the recycle bin means deleting whetever is in there - do it properly!
+                // emptying the recycle bin means deleting whatever is in there - do it properly!
                 // are managed by Delete, and not here.
                 // no idea what those events are for, keep a simplified version
                 var args = new RecycleBinEventArgs(nodeObjectType, evtMsgs);
@@ -1050,7 +1054,7 @@ namespace Umbraco.Core.Services.Implement
                     scope.Complete();
                     return OperationResult.Cancel(evtMsgs);
                 }
-                // emptying the recycle bin means deleting whetever is in there - do it properly!
+                // emptying the recycle bin means deleting whatever is in there - do it properly!
                 var query = Query<IMedia>().Where(x => x.ParentId == Constants.System.RecycleBinMedia);
                 var medias = _mediaRepository.Get(query).ToArray();
                 foreach (var media in medias)
@@ -1271,7 +1275,7 @@ namespace Umbraco.Core.Services.Implement
         /// <param name="userId">Optional id of the user deleting the media</param>
         public void DeleteMediaOfTypes(IEnumerable<int> mediaTypeIds, int userId = 0)
         {
-            //TODO: This currently this is called from the ContentTypeService but that needs to change,
+            // TODO: This currently this is called from the ContentTypeService but that needs to change,
             // if we are deleting a content type, we should just delete the data and do this operation slightly differently.
             // This method will recursively go lookup every content item, check if any of it's descendants are
             // of a different type, move them to the recycle bin, then permanently delete the content items.

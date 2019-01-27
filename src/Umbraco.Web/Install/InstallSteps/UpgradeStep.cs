@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration;
 using Umbraco.Web.Install.Models;
@@ -13,18 +14,18 @@ namespace Umbraco.Web.Install.InstallSteps
     {
         public override bool RequiresExecution(object model) => true;
 
-        public override InstallSetupResult Execute(object model) => null;
+        public override Task<InstallSetupResult> ExecuteAsync(object model) => Task.FromResult<InstallSetupResult>(null);
 
         public override object ViewModel
         {
             get
             {
-                // fixme - if UmbracoVersion.Local is null?
+                // TODO: if UmbracoVersion.Local is null?
                 // it means that there is a database but the web.config version is cleared
                 // that was a "normal" way to force the upgrader to execute, and we would detect the current
                 // version via the DB like DatabaseSchemaResult.DetermineInstalledVersion - magic, do we really
                 // need this now?
-                var currentVersion = (UmbracoVersion.Local ?? new Semver.SemVersion(0)).ToString();
+                var currentVersion = (UmbracoVersion.LocalVersion ?? new Semver.SemVersion(0)).ToString();
 
                 var newVersion = UmbracoVersion.SemanticVersion.ToString();
 
@@ -36,7 +37,7 @@ namespace Umbraco.Web.Install.InstallSteps
                     return value;
                 }
 
-                var state = Current.RuntimeState; // fixme inject
+                var state = Current.RuntimeState; // TODO: inject
                 var currentState = FormatGuidState(state.CurrentMigrationState);
                 var newState = FormatGuidState(state.FinalMigrationState);
 

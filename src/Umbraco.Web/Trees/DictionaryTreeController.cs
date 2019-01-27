@@ -2,16 +2,20 @@
 using System.Linq;
 using System.Net.Http.Formatting;
 using Umbraco.Core;
-using Umbraco.Core.Services;
+using Umbraco.Core.Models;
 using Umbraco.Web.Actions;
-
 using Umbraco.Web.Models.Trees;
 using Umbraco.Web.WebApi.Filters;
 
 namespace Umbraco.Web.Trees
 {
-    
-    [UmbracoTreeAuthorize(Constants.Trees.Dictionary)]
+
+    [UmbracoTreeAuthorize(
+        Constants.Trees.Dictionary,
+        Constants.Trees.Templates
+        // We are allowed to see the dictionary tree, if we are allowed to manage templates, such that se can use the
+        // dictionary items in templates, even when we dont have authorization to manage the dictionary items
+        )]
     [Mvc.PluginController("UmbracoTrees")]
     [CoreTree(TreeGroup = Constants.Trees.Groups.Settings)]
     [Tree(Constants.Applications.Translation, Constants.Trees.Dictionary, null)]
@@ -41,7 +45,7 @@ namespace Umbraco.Web.Trees
         /// All of the query string parameters passed from jsTree
         /// </param>
         /// <remarks>
-        /// We are allowing an arbitrary number of query strings to be pased in so that developers are able to persist custom data from the front-end
+        /// We are allowing an arbitrary number of query strings to be passed in so that developers are able to persist custom data from the front-end
         /// to the back end to be used in the query for model data.
         /// </remarks>
         protected override TreeNodeCollection GetTreeNodes(string id, FormDataCollection queryStrings)
@@ -52,10 +56,12 @@ namespace Umbraco.Web.Trees
 
             var nodes = new TreeNodeCollection();
 
+            Func<IDictionaryItem, string> ItemSort() => item => item.ItemKey;
+
             if (id == Constants.System.Root.ToInvariantString())
             {
                 nodes.AddRange(
-                    Services.LocalizationService.GetRootDictionaryItems().Select(
+                    Services.LocalizationService.GetRootDictionaryItems().OrderBy(ItemSort()).Select(
                         x => CreateTreeNode(
                             x.Id.ToInvariantString(),
                             id,
@@ -71,7 +77,7 @@ namespace Umbraco.Web.Trees
                 if (parentDictionary == null)
                     return nodes;
 
-                nodes.AddRange(Services.LocalizationService.GetDictionaryItemChildren(parentDictionary.Key).ToList().OrderByDescending(item => item.Key).Select(
+                nodes.AddRange(Services.LocalizationService.GetDictionaryItemChildren(parentDictionary.Key).ToList().OrderBy(ItemSort()).Select(
                     x => CreateTreeNode(
                         x.Id.ToInvariantString(),
                         id,

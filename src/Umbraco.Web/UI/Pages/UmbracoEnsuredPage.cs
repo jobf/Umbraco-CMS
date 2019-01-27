@@ -29,7 +29,7 @@ namespace Umbraco.Web.UI.Pages
             var treeAuth = this.GetType().GetCustomAttribute<WebformsPageTreeAuthorizeAttribute>(true);
             if (treeAuth != null)
             {
-                var treeByAlias = Current.Services.ApplicationTreeService
+                var treeByAlias = Current.TreeService
                     .GetByAlias(treeAuth.TreeAlias);
                 if (treeByAlias != null)
                 {
@@ -54,7 +54,9 @@ namespace Umbraco.Web.UI.Pages
             var entity = entityId == Constants.System.Root
                 ? EntitySlim.Root
                 : Services.EntityService.Get(entityId, objectType);
-            var hasAccess = Security.CurrentUser.HasPathAccess(entity, Services.EntityService, objectType == UmbracoObjectTypes.Document ? Constants.System.RecycleBinContent : Constants.System.RecycleBinMedia);
+            var hasAccess = objectType == UmbracoObjectTypes.Document
+                ? Security.CurrentUser.HasContentPathAccess(entity, Services.EntityService)
+                : Security.CurrentUser.HasMediaPathAccess(entity, Services.EntityService);
             if (hasAccess == false)
                 throw new AuthorizationException($"The current user doesn't have access to the path '{entity.Path}'");
 
@@ -88,7 +90,7 @@ namespace Umbraco.Web.UI.Pages
             //If this is not a back office request, then the module won't have authenticated it, in this case we
             // need to do the auth manually and since this is an UmbracoEnsuredPage, this is the anticipated behavior
             // TODO: When we implement Identity, this process might not work anymore, will be an interesting challenge
-            if (Context.Request.Url.IsBackOfficeRequest(HttpRuntime.AppDomainAppVirtualPath, UmbracoConfig.For.GlobalSettings()) == false)
+            if (Context.Request.Url.IsBackOfficeRequest(HttpRuntime.AppDomainAppVirtualPath, Current.Configs.Global()) == false)
             {
                 var http = new HttpContextWrapper(Context);
                 var ticket = http.GetUmbracoAuthTicket();

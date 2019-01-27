@@ -62,11 +62,17 @@ namespace Umbraco.Web.Models.ContentEditing
         [DataMember(Name = "publishDate")]
         public DateTime? PublishDate { get; set; }
 
+        [DataMember(Name = "releaseDate")]
+        public DateTime? ReleaseDate { get; set; }
+
+        [DataMember(Name = "expireDate")]
+        public DateTime? ExpireDate { get; set; }
+
         /// <summary>
         /// This is used to add custom localized messages/strings to the response for the app to use for localized UI purposes.
         /// </summary>
         /// <remarks>
-        /// The notifications assigned to a variant are currently only used to show custom messagse in the save/publish dialogs.
+        /// The notifications assigned to a variant are currently only used to show custom messages in the save/publish dialogs.
         /// </remarks>
         [DataMember(Name = "notifications")]
         [ReadOnly(true)]

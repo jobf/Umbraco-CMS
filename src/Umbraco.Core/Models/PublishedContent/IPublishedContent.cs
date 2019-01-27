@@ -15,7 +15,7 @@ namespace Umbraco.Core.Models.PublishedContent
     {
         #region Content
 
-        // todo - IPublishedContent properties colliding with models
+        // TODO: IPublishedContent properties colliding with models
         // we need to find a way to remove as much clutter as possible from IPublishedContent,
         // since this is preventing someone from creating a property named 'Path' and have it
         // in a model, for instance. we could move them all under one unique property eg
@@ -62,7 +62,7 @@ namespace Umbraco.Core.Models.PublishedContent
         /// <summary>
         /// Gets the identifier of the template to use to render the content item.
         /// </summary>
-        int TemplateId { get; }
+        int? TemplateId { get; }
 
         /// <summary>
         /// Gets the identifier of the user who created the content item.
@@ -151,10 +151,14 @@ namespace Umbraco.Core.Models.PublishedContent
         /// is the edited version) or false (document is published, and has not been edited, and
         /// what is returned is the published version).</para>
         /// </remarks>
-        bool IsDraft { get; }
+        bool IsDraft(string culture = null);
 
-        // fixme - consider having an IsPublished flag too
-        // so that when IsDraft is true, we can check whether there is a published version?
+        /// <summary>
+        /// Gets a value indicating whether the content is published.
+        /// </summary>
+        /// <param name="culture"></param>
+        bool IsPublished(string culture = null);
+
 
         #endregion
 

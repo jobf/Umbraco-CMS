@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Umbraco.Core;
@@ -13,16 +14,16 @@ namespace Umbraco.Tests.Clr
         [Test]
         public void EmitCtorEmits()
         {
-            var ctor1 = ReflectionUtilities.EmitConstuctor<Func<Class1>>();
+            var ctor1 = ReflectionUtilities.EmitConstructor<Func<Class1>>();
             Assert.IsInstanceOf<Class1>(ctor1());
 
-            var ctor2 = ReflectionUtilities.EmitConstuctor<Func<object>>(declaring: typeof(Class1));
+            var ctor2 = ReflectionUtilities.EmitConstructor<Func<object>>(declaring: typeof(Class1));
             Assert.IsInstanceOf<Class1>(ctor2());
 
-            var ctor3 = ReflectionUtilities.EmitConstuctor<Func<int, Class3>>();
+            var ctor3 = ReflectionUtilities.EmitConstructor<Func<int, Class3>>();
             Assert.IsInstanceOf<Class3>(ctor3(42));
 
-            var ctor4 = ReflectionUtilities.EmitConstuctor<Func<int, object>>(declaring: typeof(Class3));
+            var ctor4 = ReflectionUtilities.EmitConstructor<Func<int, object>>(declaring: typeof(Class3));
             Assert.IsInstanceOf<Class3>(ctor4(42));
         }
 
@@ -43,14 +44,14 @@ namespace Umbraco.Tests.Clr
         [Test]
         public void EmitCtorEmitsPrivateCtor()
         {
-            var ctor = ReflectionUtilities.EmitConstuctor<Func<string, Class3>>();
+            var ctor = ReflectionUtilities.EmitConstructor<Func<string, Class3>>();
             Assert.IsInstanceOf<Class3>(ctor("foo"));
         }
 
         [Test]
         public void EmitCtorThrowsIfNotFound()
         {
-            Assert.Throws<InvalidOperationException>(() => ReflectionUtilities.EmitConstuctor<Func<bool, Class3>>());
+            Assert.Throws<InvalidOperationException>(() => ReflectionUtilities.EmitConstructor<Func<bool, Class3>>());
         }
 
         [Test]
@@ -63,7 +64,7 @@ namespace Umbraco.Tests.Clr
         [Test]
         public void EmitCtorReturnsNull()
         {
-            Assert.IsNull(ReflectionUtilities.EmitConstuctor<Func<bool, Class3>>(false));
+            Assert.IsNull(ReflectionUtilities.EmitConstructor<Func<bool, Class3>>(false));
         }
 
         [Test]
@@ -308,7 +309,7 @@ namespace Umbraco.Tests.Clr
             setterInt4(object4, 42);
             Assert.AreEqual(42, object4.IntValue);
 
-            // fixme the code below runs fine with ReSharper test running within VisualStudio
+            // FIXME: the code below runs fine with ReSharper test running within VisualStudio
             // but it crashes when running via vstest.console.exe - unless some settings are required?
 
             // converting works
@@ -551,7 +552,23 @@ namespace Umbraco.Tests.Clr
             Assert.AreEqual(44, getter3(c));
         }
 
-        // fixme - missing tests specifying 'returned' on method, property
+        // FIXME: missing tests specifying 'returned' on method, property
+
+        [Test]
+        public void DeconstructAnonymousType()
+        {
+            var o = new { a = 1, b = "hello" };
+
+            var getters = new Dictionary<string, Func<object, object>>();
+            foreach (var prop in o.GetType().GetProperties())
+                getters[prop.Name] = ReflectionUtilities.EmitMethodUnsafe<Func<object, object>>(prop.GetMethod);
+
+            Assert.AreEqual(2, getters.Count);
+            Assert.IsTrue(getters.ContainsKey("a"));
+            Assert.IsTrue(getters.ContainsKey("b"));
+            Assert.AreEqual(1, getters["a"](o));
+            Assert.AreEqual("hello", getters["b"](o));
+        }
 
         #region IL Code
 

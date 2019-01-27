@@ -3,17 +3,17 @@ using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.WebPages;
-using LightInject;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.IO;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Core.Services;
-using Umbraco.Web.Composing;
 using Umbraco.Web.Models;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
+using Current = Umbraco.Web.Composing.Current;
 
 namespace Umbraco.Web.Mvc
 {
@@ -34,17 +34,14 @@ namespace Umbraco.Web.Mvc
         /// <summary>
         /// Gets or sets the database context.
         /// </summary>
-        [Inject]
         public ServiceContext Services { get; set; }
 
         /// <summary>
         /// Gets or sets the application cache.
         /// </summary>
-        [Inject]
-        public CacheHelper ApplicationCache { get; set; }
+        public AppCaches AppCaches { get; set; }
 
-        // fixme
-        // previously, Services and ApplicationCache would derive from UmbracoContext.Application, which
+        // TODO: previously, Services and ApplicationCache would derive from UmbracoContext.Application, which
         // was an ApplicationContext - so that everything derived from UmbracoContext.
         // UmbracoContext is fetched from the data tokens, thus allowing the view to be rendered with a
         // custom context and NOT the Current.UmbracoContext - eg outside the normal Umbraco routing
@@ -98,8 +95,8 @@ namespace Umbraco.Web.Mvc
                 if (content == null && model is IContentModel)
                     content = ((IContentModel) model).Content;
                 _helper = content == null
-                    ? new UmbracoHelper(UmbracoContext, Services, ApplicationCache)
-                    : new UmbracoHelper(UmbracoContext, Services, ApplicationCache, content);
+                    ? new UmbracoHelper(UmbracoContext, Services)
+                    : new UmbracoHelper(UmbracoContext, Services, content);
                 return _helper;
             }
         }
@@ -108,6 +105,20 @@ namespace Umbraco.Web.Mvc
         /// Gets the membership helper.
         /// </summary>
         public MembershipHelper Members => Umbraco.MembershipHelper;
+
+        protected UmbracoViewPage()
+            : this(
+                Current.Factory.GetInstance<ServiceContext>(),
+                Current.Factory.GetInstance<AppCaches>()
+            )
+        {
+        }
+
+        protected UmbracoViewPage(ServiceContext services, AppCaches appCaches)
+        {
+            Services = services;
+            AppCaches = appCaches;
+        }
 
         // view logic below:
 
@@ -204,7 +215,7 @@ namespace Umbraco.Web.Mvc
                         {
                             // creating previewBadge markup
                             markupToInject =
-                                string.Format(UmbracoConfig.For.UmbracoSettings().Content.PreviewBadge,
+                                string.Format(Current.Configs.Settings().Content.PreviewBadge,
                                     IOHelper.ResolveUrl(SystemDirectories.Umbraco),
                                     Server.UrlEncode(UmbracoContext.Current.HttpContext.Request.Path));
                         }

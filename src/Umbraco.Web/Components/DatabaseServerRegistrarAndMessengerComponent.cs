@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
 using Examine;
-using LightInject;
 using Umbraco.Core;
 using Umbraco.Core.Components;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Persistence;
@@ -11,11 +11,12 @@ using Umbraco.Core.Scoping;
 using Umbraco.Core.Services;
 using Umbraco.Core.Services.Changes;
 using Umbraco.Core.Sync;
+using Umbraco.Examine;
 using Umbraco.Web.Cache;
-using Umbraco.Web.Composing;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Scheduling;
 using Umbraco.Web.Search;
+using Current = Umbraco.Web.Composing.Current;
 
 namespace Umbraco.Web.Components
 {
@@ -33,33 +34,25 @@ namespace Umbraco.Web.Components
     [RuntimeLevel(MinLevel = RuntimeLevel.Run)]
 
     // during Initialize / Startup, we end up checking Examine, which needs to be initialized beforehand
-    // todo - should not be a strong dependency on "examine" but on an "indexing component"
-    [RequireComponent(typeof(ExamineComponent))]
+    // TODO: should not be a strong dependency on "examine" but on an "indexing component"
+    [ComposeAfter(typeof(ExamineComposer))]
 
-    public sealed class DatabaseServerRegistrarAndMessengerComponent : UmbracoComponentBase, IUmbracoCoreComponent
+    public sealed class DatabaseServerRegistrarAndMessengerComposer : ComponentComposer<DatabaseServerRegistrarAndMessengerComponent>, ICoreComposer
     {
-        private object _locker = new object();
-        private DatabaseServerRegistrar _registrar;
-        private BatchedDatabaseServerMessenger _messenger;
-        private IRuntimeState _runtime;
-        private ILogger _logger;
-        private IServerRegistrationService _registrationService;
-        private BackgroundTaskRunner<IBackgroundTask> _touchTaskRunner;
-        private BackgroundTaskRunner<IBackgroundTask> _processTaskRunner;
-        private bool _started;
-        private IBackgroundTask[] _tasks;
-        private IExamineManager _examineManager;
-
         public override void Compose(Composition composition)
         {
+            base.Compose(composition);
+
             composition.SetServerMessenger(factory =>
             {
                 var runtime = factory.GetInstance<IRuntimeState>();
                 var databaseFactory = factory.GetInstance<IUmbracoDatabaseFactory>();
                 var globalSettings = factory.GetInstance<IGlobalSettings>();
-                var proflog = factory.GetInstance<ProfilingLogger>();
+                var proflog = factory.GetInstance<IProfilingLogger>();
                 var scopeProvider = factory.GetInstance<IScopeProvider>();
                 var sqlContext = factory.GetInstance<ISqlContext>();
+                var logger = factory.GetInstance<ILogger>();
+                var indexRebuilder = factory.GetInstance<IndexRebuilder>();
 
                 return new BatchedDatabaseServerMessenger(
                     runtime, databaseFactory, scopeProvider, sqlContext, proflog, globalSettings,
@@ -87,35 +80,66 @@ namespace Umbraco.Web.Components
                             //rebuild indexes if the server is not synced
                             // NOTE: This will rebuild ALL indexes including the members, if developers want to target specific
                             // indexes then they can adjust this logic themselves.
-                            () => ExamineComponent.RebuildIndexes(false, _examineManager, _logger)
+                            () =>
+                            {
+                                ExamineComponent.RebuildIndexes(indexRebuilder, logger, false, 5000);
+                            }
                         }
                     });
             });
         }
+    }
 
-        public void Initialize(IRuntimeState runtime, IServerRegistrar serverRegistrar, IServerMessenger serverMessenger, IServerRegistrationService registrationService, ILogger logger, IExamineManager examineManager)
+    public sealed class DatabaseServerRegistrarAndMessengerComponent : IComponent
+    {
+        private object _locker = new object();
+        private readonly DatabaseServerRegistrar _registrar;
+        private readonly BatchedDatabaseServerMessenger _messenger;
+        private readonly IRuntimeState _runtime;
+        private readonly ILogger _logger;
+        private readonly IServerRegistrationService _registrationService;
+        private readonly BackgroundTaskRunner<IBackgroundTask> _touchTaskRunner;
+        private readonly BackgroundTaskRunner<IBackgroundTask> _processTaskRunner;
+        private bool _started;
+        private IBackgroundTask[] _tasks;
+        private IndexRebuilder _indexRebuilder;
+
+        public DatabaseServerRegistrarAndMessengerComponent(IRuntimeState runtime, IServerRegistrar serverRegistrar, IServerMessenger serverMessenger, IServerRegistrationService registrationService, ILogger logger, IndexRebuilder indexRebuilder)
         {
-            _registrar = serverRegistrar as DatabaseServerRegistrar;
-            if (_registrar == null) throw new Exception("panic: registar.");
-
-            _messenger = serverMessenger as BatchedDatabaseServerMessenger;
-            if (_messenger == null) throw new Exception("panic: messenger");
-
-            _messenger.Startup();
-
             _runtime = runtime;
             _logger = logger;
             _registrationService = registrationService;
-            _examineManager = examineManager;
+            _indexRebuilder = indexRebuilder;
 
-            _touchTaskRunner = new BackgroundTaskRunner<IBackgroundTask>("ServerRegistration",
-                new BackgroundTaskRunnerOptions { AutoStart = true }, logger);
-            _processTaskRunner = new BackgroundTaskRunner<IBackgroundTask>("ServerInstProcess",
-                new BackgroundTaskRunnerOptions { AutoStart = true }, logger);
+            // create task runner for DatabaseServerRegistrar
+            _registrar = serverRegistrar as DatabaseServerRegistrar;
+            if (_registrar != null)
+            {
+                _touchTaskRunner = new BackgroundTaskRunner<IBackgroundTask>("ServerRegistration",
+                    new BackgroundTaskRunnerOptions { AutoStart = true }, logger);
+            }
 
-            //We will start the whole process when a successful request is made
-            UmbracoModule.RouteAttempt += RegisterBackgroundTasksOnce;
+            // create task runner for BatchedDatabaseServerMessenger
+            _messenger = serverMessenger as BatchedDatabaseServerMessenger;
+            if (_messenger != null)
+            {
+                _processTaskRunner = new BackgroundTaskRunner<IBackgroundTask>("ServerInstProcess",
+                    new BackgroundTaskRunnerOptions { AutoStart = true }, logger);
+            }
         }
+
+        public void Initialize()
+        { 
+            //We will start the whole process when a successful request is made
+            if (_registrar != null || _messenger != null)
+                UmbracoModule.RouteAttempt += RegisterBackgroundTasksOnce;
+
+            // must come last, as it references some _variables
+            _messenger?.Startup();
+        }
+
+        public void Terminate()
+        { }
 
         /// <summary>
         /// Handle when a request is made
@@ -157,6 +181,9 @@ namespace Umbraco.Web.Components
 
         private IBackgroundTask RegisterInstructionProcess()
         {
+            if (_messenger == null)
+                return null;
+
             var task = new InstructionProcessTask(_processTaskRunner,
                 60000, //delay before first execution
                 _messenger.Options.ThrottleSeconds*1000, //amount of ms between executions
@@ -168,6 +195,9 @@ namespace Umbraco.Web.Components
 
         private IBackgroundTask RegisterTouchServer(IServerRegistrationService registrationService, string serverAddress)
         {
+            if (_registrar == null)
+                return null;
+
             var task = new TouchServerTask(_touchTaskRunner,
                 15000, //delay before first execution
                 _registrar.Options.RecurringSeconds*1000, //amount of ms between executions

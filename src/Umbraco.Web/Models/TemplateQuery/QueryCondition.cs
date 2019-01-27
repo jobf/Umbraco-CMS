@@ -1,98 +1,81 @@
-﻿namespace Umbraco.Web.Models.TemplateQuery
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+using Umbraco.Core.Models.PublishedContent;
+
+namespace Umbraco.Web.Models.TemplateQuery
 {
     public class QueryCondition
     {
-
         public PropertyModel Property { get; set; }
-        public OperathorTerm Term { get; set; }
+        public OperatorTerm Term { get; set; }
         public string ConstraintValue { get; set; }
     }
 
-
     internal static class QueryConditionExtensions
     {
+        private static Lazy<MethodInfo> StringContainsMethodInfo =>
+            new Lazy<MethodInfo>(() => typeof(string).GetMethod("Contains", new[] {typeof(string)}));
 
-        public static string BuildTokenizedCondition(this QueryCondition condition, int token)
+        public static Expression<Func<IPublishedContent, bool>> BuildCondition(this QueryCondition condition,
+            string parameterAlias, IEnumerable<IPublishedContent> contents, IEnumerable<PropertyModel> properties)
         {
-            return condition.BuildConditionString(string.Empty, token);
-        }
-
-        public static string BuildCondition(this QueryCondition condition, string parameterAlias)
-        {
-            return condition.BuildConditionString(parameterAlias + ".");
-        }
-
-        private static string BuildConditionString(this QueryCondition condition, string prefix, int token = -1)
-        {
-
-
-
-            var operand = string.Empty;
-            var value = string.Empty;
-            var constraintValue = string.Empty;
-
-
-            //if a token is used, use a token placeholder, otherwise, use the actual value
-            if(token >= 0){
-                constraintValue = string.Format("@{0}", token);
-            }else {
-
-                //modify the format of the constraint value
-                switch (condition.Property.Type)
-                {
-                    case "string":
-                        constraintValue = string.Format("\"{0}\"", condition.ConstraintValue);
-                        break;
-                    case "datetime":
-                        constraintValue = string.Format("DateTime.Parse(\"{0}\")", condition.ConstraintValue);
-                        break;
-                    default:
-                        constraintValue = condition.ConstraintValue;
-                        break;
-                }
-
-               // constraintValue = condition.Property.Type == "string" ? string.Format("\"{0}\"", condition.ConstraintValue) : condition.ConstraintValue;
-            }
-
-            switch (condition.Term.Operathor)
+            object constraintValue;
+            switch (condition.Property.Type)
             {
-                case Operathor.Equals:
-                    operand =   " == ";
+                case "string":
+                    constraintValue = condition.ConstraintValue;
                     break;
-                case Operathor.NotEquals:
-                    operand = " != ";
+                case "datetime":
+                    constraintValue = DateTime.Parse(condition.ConstraintValue);
                     break;
-                case Operathor.GreaterThan:
-                    operand = " > ";
-                    break;
-                case Operathor.GreaterThanEqualTo:
-                    operand = " >= ";
-                    break;
-                case Operathor.LessThan:
-                    operand = " < ";
-                    break;
-                case Operathor.LessThanEqualTo:
-                    operand = " <= ";
-                    break;
-                case Operathor.Contains:
-                    value = string.Format("{0}{1}.Contains({2})", prefix, condition.Property.Alias, constraintValue);
-                    break;
-                case Operathor.NotContains:
-                    value =  string.Format("!{0}{1}.Contains({2})", prefix, condition.Property.Alias, constraintValue);
-                    break;
-                default :
-                    operand = " == ";
+                default:
+                    constraintValue = Convert.ChangeType(condition.ConstraintValue, typeof(int));
                     break;
             }
 
+            var parameterExpression = Expression.Parameter(typeof(IPublishedContent), parameterAlias);
+            var propertyExpression = Expression.Property(parameterExpression, condition.Property.Alias);
 
-            if (string.IsNullOrEmpty(value) == false)
-                return value;
+            var valueExpression = Expression.Constant(constraintValue);
+            Expression bodyExpression;
+            switch (condition.Term.Operator)
+            {
+                case Operator.NotEquals:
+                    bodyExpression = Expression.NotEqual(propertyExpression, valueExpression);
+                    break;
+                case Operator.GreaterThan:
+                    bodyExpression = Expression.GreaterThan(propertyExpression, valueExpression);
+                    break;
+                case Operator.GreaterThanEqualTo:
+                    bodyExpression = Expression.GreaterThanOrEqual(propertyExpression, valueExpression);
+                    break;
+                case Operator.LessThan:
+                    bodyExpression = Expression.LessThan(propertyExpression, valueExpression);
+                    break;
+                case Operator.LessThanEqualTo:
+                    bodyExpression = Expression.LessThanOrEqual(propertyExpression, valueExpression);
+                    break;
+                case Operator.Contains:
+                    bodyExpression = Expression.Call(propertyExpression, StringContainsMethodInfo.Value,
+                        valueExpression);
+                    break;
+                case Operator.NotContains:
+                    var tempExpression = Expression.Call(propertyExpression, StringContainsMethodInfo.Value,
+                        valueExpression);
+                    bodyExpression = Expression.Equal(tempExpression, Expression.Constant(false));
+                    break;
+                default:
+                case Operator.Equals:
+                    bodyExpression = Expression.Equal(propertyExpression, valueExpression);
+                    break;
+            }
 
+            var predicate =
+                Expression.Lambda<Func<IPublishedContent, bool>>(bodyExpression.Reduce(), parameterExpression);
 
-
-            return string.Format("{0}{1}{2}{3}", prefix, condition.Property.Alias, operand, constraintValue);
+            return predicate;
         }
-
     }
 }

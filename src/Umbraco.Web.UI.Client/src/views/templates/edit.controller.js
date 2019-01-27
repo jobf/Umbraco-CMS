@@ -191,7 +191,7 @@
 							$timeout(function() {
 								var nameField = angular.element(document.querySelector('[data-element="editor-name-field"]'));
 								if (nameField) {
-									nameField.bind('blur', function(event) {
+									nameField.on('blur', function(event) {
 										if (event.target.value) {
 											vm.save(true);
 										}
@@ -438,7 +438,7 @@
                 var emptyStateMessage = values[1];
 
                 var dictionaryItem = {
-                    section: "settings",
+                    section: "translation",
                     treeAlias: "dictionary",
                     entityType: "dictionary",
                     multiPicker: false,
@@ -634,7 +634,7 @@
                     templateCode = templateCode.replace(layoutDefRegex, "$1\"" + newValue + "\"$3");
                 } else {
                     // Declaration doesn't exist, so prepend to start of doc
-                    //TODO: Maybe insert at the cursor position, rather than just at the top of the doc?
+                    // TODO: Maybe insert at the cursor position, rather than just at the top of the doc?
                     templateCode = "@{\n\tLayout = \"" + newValue + "\";\n}\n" + templateCode;
                 }
             } else {

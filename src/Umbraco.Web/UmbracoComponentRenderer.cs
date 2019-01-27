@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections;
-using System.Globalization;
 using System.IO;
 using System.Web;
 using System.Web.UI;
 using Umbraco.Core;
-using Umbraco.Core.Models;
 using Umbraco.Web.Templates;
 using umbraco;
 using System.Collections.Generic;
-using umbraco.presentation.templateControls;
-using Umbraco.Core.Exceptions;
-using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web.Composing;
 using Umbraco.Web.Macros;
 
@@ -133,11 +128,11 @@ namespace Umbraco.Web
             var macroProps = new Hashtable();
             foreach (var i in parameters)
             {
-                //TODO: We are doing at ToLower here because for some insane reason the UpdateMacroModel method of macro.cs
+                // TODO: We are doing at ToLower here because for some insane reason the UpdateMacroModel method of macro.cs
                 // looks for a lower case match. WTF. the whole macro concept needs to be rewritten.
 
 
-                //NOTE: the value could have html encoded values, so we need to deal with that
+                //NOTE: the value could have HTML encoded values, so we need to deal with that
                 macroProps.Add(i.Key.ToLowerInvariant(), (i.Value is string) ? HttpUtility.HtmlDecode(i.Value.ToString()) : i.Value);
             }
             var renderer = new MacroRenderer(Current.ProfilingLogger);

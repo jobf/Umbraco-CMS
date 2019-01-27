@@ -1,4 +1,6 @@
-﻿namespace Umbraco.Core.Configuration
+﻿using System;
+
+namespace Umbraco.Core.Configuration
 {
     /// <summary>
     /// Contains general settings information for the entire Umbraco instance based on information from  web.config appsettings 
@@ -16,15 +18,6 @@
         /// </summary>
         /// <value>The reserved paths.</value>
         string ReservedPaths { get; }
-
-        /// <summary>
-        /// Gets the name of the content XML file.
-        /// </summary>
-        /// <value>The content XML.</value>
-        /// <remarks>
-        /// Defaults to ~/App_Data/umbraco.config
-        /// </remarks>
-        string ContentXmlFile { get; }
 
         /// <summary>
         /// Gets the path to umbraco's root directory (/umbraco by default).

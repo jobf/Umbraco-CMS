@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Formatting;
 using Umbraco.Core;
-using Umbraco.Core.Configuration;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
-using Umbraco.Core.Services;
+using Umbraco.Core.Models.Entities;
 using Umbraco.Web.Actions;
-
 using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Web.Models.Trees;
 using Umbraco.Web.WebApi.Filters;
@@ -44,7 +43,7 @@ namespace Umbraco.Web.Trees
                         var node = CreateTreeNode(dt.Id.ToString(), id, queryStrings, dt.Name, "icon-folder", dt.HasChildren, "");
                         node.Path = dt.Path;
                         node.NodeType = "container";
-                        //TODO: This isn't the best way to ensure a noop process for clicking a node but it works for now.
+                        // TODO: This isn't the best way to ensure a no operation process for clicking a node but it works for now.
                         node.AdditionalData["jsClickCallback"] = "javascript:void(0);";
                         return node;
                     }));
@@ -58,7 +57,7 @@ namespace Umbraco.Web.Trees
                     .Select(dt =>
                     {
                         // since 7.4+ child type creation is enabled by a config option. It defaults to on, but can be disabled if we decide to.
-                        // need this check to keep supporting sites where childs have already been created.
+                        // need this check to keep supporting sites where children have already been created.
                         var hasChildren = dt.HasChildren;
                         var node = CreateTreeNode(dt, Constants.ObjectTypes.DocumentType, id, queryStrings, "icon-item-arrangement", hasChildren);
 
@@ -73,7 +72,7 @@ namespace Umbraco.Web.Trees
         {
             var menu = new MenuItemCollection();
 
-            var enableInheritedDocumentTypes = UmbracoConfig.For.UmbracoSettings().Content.EnableInheritedDocumentTypes;
+            var enableInheritedDocumentTypes = Current.Configs.Settings().Content.EnableInheritedDocumentTypes;
 
             if (id == Constants.System.Root.ToInvariantString())
             {
@@ -85,7 +84,7 @@ namespace Umbraco.Web.Trees
                 menu.Items.Add(new MenuItem("importDocumentType", Services.TextService)
                 {
                     Icon = "page-up",
-                    SeperatorBefore = true,
+                    SeparatorBefore = true,
                     OpensDialog = true
                 });
                 menu.Items.Add(new RefreshNode(Services.TextService, true));
@@ -131,7 +130,7 @@ namespace Umbraco.Web.Trees
                 menu.Items.Add(new MenuItem("export", Services.TextService)
                 {
                     Icon = "download-alt",
-                    SeperatorBefore = true,
+                    SeparatorBefore = true,
                     OpensDialog = true
                 });
                 menu.Items.Add<ActionDelete>(Services.TextService, true, opensDialog: true);
@@ -142,10 +141,11 @@ namespace Umbraco.Web.Trees
             return menu;
         }
 
-        public IEnumerable<SearchResultItem> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
+        public IEnumerable<SearchResultEntity> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
         {
-            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.DocumentType, pageIndex, pageSize, out totalFound, filter: query);
-            return Mapper.Map<IEnumerable<SearchResultItem>>(results);
+            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.DocumentType, pageIndex, pageSize, out totalFound,
+                filter: SqlContext.Query<IUmbracoEntity>().Where(x => x.Name.Contains(query)));
+            return Mapper.Map<IEnumerable<SearchResultEntity>>(results);
         }
     }
 }

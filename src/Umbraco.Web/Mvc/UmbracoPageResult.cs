@@ -15,9 +15,9 @@ namespace Umbraco.Web.Mvc
     /// </summary>
     public class UmbracoPageResult : ActionResult
     {
-        private readonly ProfilingLogger _profilingLogger;
+        private readonly IProfilingLogger _profilingLogger;
 
-        public UmbracoPageResult(ProfilingLogger profilingLogger)
+        public UmbracoPageResult(IProfilingLogger profilingLogger)
         {
             _profilingLogger = profilingLogger;
         }
@@ -94,7 +94,7 @@ namespace Umbraco.Web.Mvc
 
         /// <summary>
         /// When POSTing to MVC but rendering in WebForms we need to do some trickery, we'll create a dummy viewcontext with all of the
-        /// current modelstate, tempdata, viewdata so that if we're rendering partial view macros within the webforms view, they will
+        /// current model state, tempdata, viewdata so that if we're rendering partial view macros within the webforms view, they will
         /// get all of this merged into them.
         /// </summary>
         /// <param name="context"></param>

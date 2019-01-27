@@ -173,13 +173,17 @@ namespace Umbraco.Web.PropertyEditors
                             {
                                 // create a temp property with the value
                                 var tempProp = new Property(propType);
-                                tempProp.SetValue(propValues[propAlias] == null ? null : propValues[propAlias].ToString());
+                                // if the property varies by culture, make sure we save using the current culture
+                                var propCulture = propType.VariesByCulture() || propType.VariesByCultureAndSegment()
+                                    ? culture
+                                    : null;
+                                tempProp.SetValue(propValues[propAlias] == null ? null : propValues[propAlias].ToString(), propCulture);
 
                                 // convert that temp property, and store the converted value
                                 var propEditor = _propertyEditors[propType.PropertyEditorAlias];
                                 var tempConfig = dataTypeService.GetDataType(propType.DataTypeId).Configuration;
                                 var valEditor = propEditor.GetValueEditor(tempConfig);
-                                var convValue = valEditor.ToEditor(tempProp, dataTypeService);
+                                var convValue = valEditor.ToEditor(tempProp, dataTypeService, propCulture);
                                 propValues[propAlias] = convValue == null ? null : JToken.FromObject(convValue);
                             }
                             catch (InvalidOperationException)
@@ -312,7 +316,7 @@ namespace Umbraco.Web.PropertyEditors
                             {
                                 if (propValues[propKey] == null)
                                     yield return new ValidationResult("Item " + (i + 1) + " '" + propType.Name + "' cannot be null", new[] { propKey });
-                                else if (propValues[propKey].ToString().IsNullOrWhiteSpace())
+                                else if (propValues[propKey].ToString().IsNullOrWhiteSpace() || (propValues[propKey].Type == JTokenType.Array && !propValues[propKey].HasValues))
                                     yield return new ValidationResult("Item " + (i + 1) + " '" + propType.Name + "' cannot be empty", new[] { propKey });
                             }
 

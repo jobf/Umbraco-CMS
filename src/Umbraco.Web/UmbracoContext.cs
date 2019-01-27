@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Web;
+using System.Web.Hosting;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Models.PublishedContent;
-using Umbraco.Core.Services;
 using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Runtime;
@@ -39,7 +41,7 @@ namespace Umbraco.Web
         /// <param name="replace">A value indicating whether to replace the existing context.</param>
         ///  <returns>The "current" UmbracoContext.</returns>
         ///  <remarks>
-        ///  fixme - this needs to be clarified
+        ///  TODO: this needs to be clarified
         ///
         ///  If <paramref name="replace"/> is true then the "current" UmbracoContext is replaced
         ///  with a new one even if there is one already. See <see cref="WebRuntimeComponent"/>. Has to do with
@@ -89,6 +91,35 @@ namespace Umbraco.Web
             // create & assign to accessor, dispose existing if any
             umbracoContextAccessor.UmbracoContext?.Dispose();
             return umbracoContextAccessor.UmbracoContext = new UmbracoContext(httpContext, publishedSnapshotService, webSecurity, umbracoSettings, urlProviders, globalSettings, variationContextAccessor);
+        }
+
+        /// <summary>
+        /// Gets a disposable object representing the presence of a current UmbracoContext.
+        /// </summary>
+        /// <remarks>
+        /// <para>The disposable object should be used in a using block: using (UmbracoContext.EnsureContext()) { ... }.</para>
+        /// <para>If an actual current UmbracoContext is already present, the disposable object is null and this method does nothing.</para>
+        /// <para>Otherwise, a temporary, dummy UmbracoContext is created and registered in the accessor. And disposed and removed from the accessor.</para>
+        /// </remarks>
+        internal static IDisposable EnsureContext(HttpContextBase httpContext = null) // keep this internal for now!
+        {
+            if (Composing.Current.UmbracoContext != null) return null;
+
+            httpContext = httpContext ?? new HttpContextWrapper(System.Web.HttpContext.Current ?? new HttpContext(new SimpleWorkerRequest("temp.aspx", "", new StringWriter())));
+
+            return EnsureContext(
+                Composing.Current.UmbracoContextAccessor,
+                httpContext,
+                Composing.Current.PublishedSnapshotService,
+                new WebSecurity(httpContext, Composing.Current.Services.UserService, Composing.Current.Configs.Global()),
+                Composing.Current.Configs.Settings(),
+                Composing.Current.UrlProviders,
+                Composing.Current.Configs.Global(),
+                Composing.Current.Factory.GetInstance<IVariationContextAccessor>(),
+                true);
+
+            // when the context will be disposed, it will be removed from the accessor
+            // (see DisposeResources)
         }
 
         // initializes a new instance of the UmbracoContext class
@@ -215,6 +246,9 @@ namespace Umbraco.Web
         /// </summary>
         public HttpContextBase HttpContext { get; }
 
+        /// <summary>
+        /// Gets the variation context accessor.
+        /// </summary>
         public IVariationContextAccessor VariationContextAccessor { get; }
 
         /// <summary>
@@ -226,7 +260,7 @@ namespace Umbraco.Web
         /// ctor will have to have another parameter added only for this one method which is annoying and doesn't make a ton of sense
         /// since the UmbracoContext itself doesn't use this.
         ///
-        /// TODO The alternative is to have a IDomainHelperAccessor singleton which is cached per UmbracoContext
+        /// TODO: The alternative is to have a IDomainHelperAccessor singleton which is cached per UmbracoContext
         /// </remarks>
         internal DomainHelper GetDomainHelper(ISiteDomainHelper siteDomainHelper)
             => _domainHelper ?? (_domainHelper = new DomainHelper(PublishedSnapshot.Domains, siteDomainHelper));

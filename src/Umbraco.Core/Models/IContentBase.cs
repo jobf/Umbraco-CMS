@@ -76,6 +76,7 @@ namespace Umbraco.Core.Models
         /// <para>Returns <c>false</c> for the invariant culture, in order to be consistent
         /// with <seealso cref="AvailableCultures"/>, even though the invariant culture is
         /// always available.</para>
+        /// <para>Does not support the '*' wildcard (returns false).</para>
         /// </remarks>
         bool IsCultureAvailable(string culture);
 
@@ -136,8 +137,6 @@ namespace Umbraco.Core.Models
         /// </summary>
         void CopyFrom(IContent other, string culture = "*");
 
-        // fixme validate published cultures?
-        
         /// <summary>
         /// Validates the content item's properties pass variant rules
         /// </summary>

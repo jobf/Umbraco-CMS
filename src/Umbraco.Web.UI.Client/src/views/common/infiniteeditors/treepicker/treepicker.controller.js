@@ -1,18 +1,12 @@
 //used for the media picker dialog
 angular.module("umbraco").controller("Umbraco.Editors.TreePickerController",
     function ($scope,
-        $q,
         entityResource,
         eventsService,
-        $log,
-        searchService,
         angularHelper,
         $timeout,
         localizationService,
         treeService,
-        contentResource,
-        mediaResource,
-        memberResource,
         languageResource) {
 
         //used as the result selection
@@ -60,6 +54,7 @@ angular.module("umbraco").controller("Umbraco.Editors.TreePickerController",
         vm.toggleLanguageSelector = toggleLanguageSelector;
         vm.selectLanguage = selectLanguage;
         vm.onSearchResults = onSearchResults;
+        vm.selectResult = selectResult;
         vm.hideSearch = hideSearch;
         vm.closeMiniListView = closeMiniListView;
         vm.selectListViewNode = selectListViewNode;
@@ -68,7 +63,7 @@ angular.module("umbraco").controller("Umbraco.Editors.TreePickerController",
 
         function initDialogTree() {
             vm.dialogTreeApi.callbacks.treeLoaded(treeLoadedHandler);
-            //TODO: Also deal with unexpanding!!
+            // TODO: Also deal with unexpanding!!
             vm.dialogTreeApi.callbacks.treeNodeExpanded(nodeExpandedHandler);
             vm.dialogTreeApi.callbacks.treeNodeSelect(nodeSelectHandler);
         }
@@ -116,7 +111,7 @@ angular.module("umbraco").controller("Umbraco.Editors.TreePickerController",
                 }
             }
 
-            //TODO: Seems odd this logic is here, i don't think it needs to be and should just exist on the property editor using this
+            // TODO: Seems odd this logic is here, i don't think it needs to be and should just exist on the property editor using this
             if ($scope.model.minNumber) {
                 $scope.model.minNumber = parseInt($scope.model.minNumber, 10);
             }

@@ -51,7 +51,7 @@ namespace umbraco
         /// <remarks>
         /// The difference between creating the page with PublishedContentRequest vs an IPublishedContent item is
         /// that the PublishedContentRequest takes into account how a template is assigned during the routing process whereas
-        /// with an IPublishedContent item, the template id is asssigned purely based on the default.
+        /// with an IPublishedContent item, the template id is assigned purely based on the default.
         /// </remarks>
         internal page(PublishedRequest frequest)
         {
@@ -88,10 +88,10 @@ namespace umbraco
                 doc.WriterName, doc.CreatorName, doc.CreateDate, doc.UpdateDate,
                 doc.Path, doc.Parent == null ? -1 : doc.Parent.Id);
 
-            if (doc.TemplateId > 0)
+            if (doc.TemplateId.HasValue)
             {
                 //set the template to whatever is assigned to the doc
-                _template = doc.TemplateId;
+                _template = doc.TemplateId.Value;
                 _elements["template"] = _template.ToString();
             }
 
@@ -102,7 +102,7 @@ namespace umbraco
         /// Initializes a new instance of the page for a content.
         /// </summary>
         /// <param name="content">The content.</param>
-        /// <remarks>This is for <see cref="MacroController"/> usage only.</remarks>
+        /// <remarks>This is for <see cref="MacroRenderingController"/> usage only.</remarks>
         internal page(IContent content, IVariationContextAccessor variationContextAccessor)
             : this(new PagePublishedContent(content, variationContextAccessor))
         { }
@@ -324,7 +324,7 @@ namespace umbraco
                 _id = _inner.Id;
                 _key = _inner.Key;
 
-                //TODO: ARGH! need to fix this - this is not good because it uses ApplicationContext.Current
+                // TODO: ARGH! need to fix this - this is not good because it uses ApplicationContext.Current
                 _creatorName = _inner.GetCreatorProfile().Name;
                 _writerName = _inner.GetWriterProfile().Name;
 
@@ -357,10 +357,7 @@ namespace umbraco
                 get { return _key; }
             }
 
-            public int TemplateId
-            {
-                get { return _inner.Template == null ? 0 : _inner.Template.Id; }
-            }
+            public int? TemplateId => _inner.TemplateId;
 
             public int SortOrder
             {
@@ -467,9 +464,14 @@ namespace umbraco
                 get { return PublishedItemType.Content; }
             }
 
-            public bool IsDraft
+            public bool IsDraft(string culture = null)
             {
-                get { throw new NotImplementedException(); }
+                throw new NotImplementedException();
+            }
+
+            public bool IsPublished(string culture = null)
+            {
+                throw new NotImplementedException();
             }
 
             public IPublishedContent Parent

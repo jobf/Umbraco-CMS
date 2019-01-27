@@ -15,7 +15,7 @@
     <key alias="createGroup">Stwórz grupę</key>
     <key alias="delete">Usuń</key>
     <key alias="disable">Deaktywuj</key>
-    <key alias="emptyTrashcan">Opróżnij kosz</key>
+    <key alias="emptyRecycleBin">Opróżnij kosz</key>
     <key alias="enable">Aktywuj</key>
     <key alias="exportDocumentType">Eksportuj typ dokumentu</key>
     <key alias="importDocumentType">Importuj typ dokumentu</key>
@@ -298,7 +298,6 @@
     <key alias="closeThisWindow">Zamknij to okno</key>
     <key alias="confirmdelete">Jesteś pewny, że chcesz usunąć</key>
     <key alias="confirmdisable">Jesteś pewny, że chcesz wyłączyć</key>
-    <key alias="confirmEmptyTrashcan">Proszę zaznaczyć, aby potwierdzić usunięcie %0% elementów.</key>
     <key alias="confirmlogout">Jesteś pewny?</key>
     <key alias="confirmSure">Jesteś pewny?</key>
     <key alias="cut">Wytnij</key>
@@ -335,10 +334,6 @@
     <key alias="siterepublishHelp">Cache strony zostanie odświeżone. Cała zawartość opublikowana będzie aktualna, lecz nieopublikowana zawartość pozostanie niewidoczna</key>
     <key alias="tableColumns">Liczba kolumn</key>
     <key alias="tableRows">Liczba wierszy</key>
-    <key alias="templateContentAreaHelp"><![CDATA[<strong>Ustaw zastępczy ID</strong> Ustawiając ID na tym elemencie możesz później łączyć treść z podrzędnych szablonów,
-      ustawiając dowiązanie do tego ID na elemencie <code>&lt;asp:treści /&gt;</code>]]></key>
-    <key alias="templateContentPlaceHolderHelp"><![CDATA[<strong>Wybierz zastępczy ID</strong> z poniższej listy. Możesz wybierać tylko
-      spośród ID na szablonie nadrzędnym tego formularza.]]></key>
     <key alias="thumbnailimageclickfororiginal">Kliknij na obrazie, aby zobaczyć go w pełnym rozmiarze</key>
     <key alias="treepicker">Wybierz element</key>
     <key alias="viewCacheItem">Podgląd elementów Cache</key>
@@ -532,7 +527,6 @@
     <key alias="or">lub</key>
     <key alias="password">Hasło</key>
     <key alias="path">Ścieżka</key>
-    <key alias="placeHolderID">Zastępczy ID</key>
     <key alias="pleasewait">Proszę czekać...</key>
     <key alias="previous">Poprzedni</key>
     <key alias="properties">Właściwości</key>
@@ -860,14 +854,12 @@ Naciśnij przycisk <strong>instaluj</strong>, aby zainstalować bazę danych Umb
     <key alias="packageCompatibilityDescription">Według raportów członków społeczności, ten pakiet jest zgodny z następującymi wersjami Umbraco. Pełna zgodność nie może być zagwarantowana dla wersji zaraportowanych poniżej 100%</key>
     <key alias="packageExternalSources">Zewnętrzne źródła</key>
     <key alias="packageAuthor">Autor</key>
-    <key alias="packageDemonstration">Demonstracja</key>
     <key alias="packageDocumentation">Dokumentacja</key>
     <key alias="packageMetaData">Metadane pakietu</key>
     <key alias="packageName">Nazwa pakietu</key>
     <key alias="packageNoItemsHeader">Pakiet nie zawiera żadnych elementów</key>
     <key alias="packageNoItemsText"><![CDATA[Ten plik pakietu nie zawiera żadnych elementów do odinstalowania<br/><br/>
       Możesz bezpiecznie go usunąć z systemu poprzez kliknięcie na przycisku "odinstaluj pakiet"]]></key>
-    <key alias="packageNoUpgrades">Nie ma dostępnych aktualizacji</key>
     <key alias="packageOptions">Opcje pakietu</key>
     <key alias="packageReadme">Opis pakietu</key>
     <key alias="packageRepository">Repozytorium pakietu</key>
@@ -878,13 +870,7 @@ Naciśnij przycisk <strong>instaluj</strong>, aby zainstalować bazę danych Umb
     <key alias="packageUninstallText"><![CDATA[Poniżej możesz odznaczyć elementy, których nie chcesz usunąć tym razem. Kiedy klikniesz "potwierdź odinstalowanie", wszystkie zaznaczone elementy zostaną usunięte.<br/>
       <span style="color: Red; font-weight: bold;">Uwaga:</span> wszystkie elementy, media, itp. w zależności od elementów, które usuwasz, przestaną działać i mogą spowodować niestabilność systemu,
       więc odinstalowuj z uwagą. W przypadku problemów skontaktuj się z autorem pakietu.]]></key>
-    <key alias="packageUpgradeDownload">Pobierz aktualizację z repozytorium</key>
-    <key alias="packageUpgradeHeader">Aktualizuj pakiet</key>
-    <key alias="packageUpgradeInstructions">Instrukcja aktualizacji</key>
-    <key alias="packageUpgradeText">Jest dostępna aktualizacja dla tego pakietu. Możesz ją pobrać wprost z repozytorium pakietów Umbraco.</key>
     <key alias="packageVersion">Wersja pakietu</key>
-    <key alias="packageVersionHistory">Historia wersji pakietu</key>
-    <key alias="viewPackageWebsite">Odwiedź stronę pakietu</key>
     <key alias="packageAlreadyInstalled">Pakiet jest już zainstalowany</key>
     <key alias="targetVersionMismatch">Ten pakiet nie może być zainstalowany, ponieważ wymaga Umbraco w wersji przynajmniej %0%</key>
     <key alias="installStateUninstalling">Odinstalowywanie...</key>
@@ -960,8 +946,6 @@ Naciśnij przycisk <strong>instaluj</strong>, aby zainstalować bazę danych Umb
   </area>
   <area alias="imagecropper">
     <key alias="reset">Resetuj</key>
-    <key alias="defineCrop">Zdefiniuj przycięcie</key>
-    <key alias="defineCropDescription">Ustaw alias dla przycięcia, a także jego domyślną szerokość i długość</key>
     <key alias="saveCrop">Zapisz przycięcie</key>
     <key alias="addCrop">Dodaj nowe przycięcie</key>
   </area>
@@ -1436,9 +1420,6 @@ Naciśnij przycisk <strong>instaluj</strong>, aby zainstalować bazę danych Umb
     <key alias="configurationServiceFileNotFound">Plik nie istnieje: '%0%'.</key>
     <key alias="configurationServiceNodeNotFound"><![CDATA[Nie można znaleźć <strong>'%0%'</strong> w pliku konfiguracyjnym <strong>'%1%'</strong>.]]></key>
     <key alias="configurationServiceError">Wystąpił błąd, sprawdź logi, aby wyświetlić pełen opis błędu: %0%.</key>
-    <key alias="xmlDataIntegrityCheckMembers">Członkowie - Suma XML: %0%, Suma: %1%, Suma niepoprawnych: %2%</key>
-    <key alias="xmlDataIntegrityCheckMedia">Media - Suma XML: %0%, Suma: %1%, Suma niepoprawnych: %2%</key>
-    <key alias="xmlDataIntegrityCheckContent">Zawartość - Suma XML: %0%, Suma opublikowanych: %1%, Suma niepoprawnych: %2%</key>
     <key alias="httpsCheckValidCertificate">Certifikat Twojej strony jest poprawny.</key>
     <key alias="httpsCheckInvalidCertificate">Błąd walidacji certyfikatu: '%0%'</key>
     <key alias="httpsCheckExpiredCertificate">Certyfikat SSL Twojej strony wygasł.</key>

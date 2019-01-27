@@ -57,7 +57,7 @@
                     </div>
                 </div>
 
-                <umb-control-group label="Enter a folder name" hide-label="false">
+                <umb-control-group label="@create_enterFolderName" localize="label" hide-label="false">
                     <input type="text" name="folderName" ng-model="vm.folderName" class="umb-textstring textstring input-block-level" umb-auto-focus required />
                 </umb-control-group>
 
@@ -69,7 +69,7 @@
 
     <!-- Dialog footer -->
     <div class="umb-dialog-footer btn-toolbar umb-btn-toolbar">
-        <button class="btn btn-info" ng-click="nav.hideDialog(true)">
+        <button class="btn btn-info" ng-click="vm.close()">
             <localize key="buttons_somethingElse">Do something else</localize>
         </button>
     </div>

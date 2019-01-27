@@ -287,7 +287,10 @@ function treeService($q, treeResource, iconHelper, notificationsService, eventsS
                 throw "No node defined on args object for loadNodeChildren";
             }
 
-            this.removeChildNodes(args.node);
+            // don't remove the children for container nodes in dialogs, as it'll remove the right arrow indicator
+            if (!args.isDialog || !args.node.metaData.isContainer) {
+                this.removeChildNodes(args.node);
+            }
             args.node.loading = true;
 
             return this.getChildren(args)
@@ -414,7 +417,12 @@ function treeService($q, treeResource, iconHelper, notificationsService, eventsS
                     for (var c = 0; c < tn.children.length; c++) {
                         if (tn.children[c].isContainer) {
                             //recurse
-                            return getTreeRoot(tn.children[c]);
+                            var root = getTreeRoot(tn.children[c]);
+
+                            //only return if we found the root in this child, otherwise continue.
+                            if(root){
+                                return root;
+                            }
                         }
                         else if (self.getTreeAlias(tn.children[c]) === treeAlias) {
                             return tn.children[c];

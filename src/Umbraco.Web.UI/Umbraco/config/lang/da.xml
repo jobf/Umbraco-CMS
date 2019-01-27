@@ -15,7 +15,7 @@
     <key alias="createGroup">Opret gruppe</key>
     <key alias="delete">Slet</key>
     <key alias="disable">Deaktivér</key>
-    <key alias="emptyTrashcan">Tøm papirkurv</key>
+    <key alias="emptyRecycleBin">Tøm papirkurv</key>
     <key alias="enable">Aktivér</key>
     <key alias="exportDocumentType">Eksportér dokumenttype</key>
     <key alias="importDocumentType">Importér dokumenttype</key>
@@ -32,8 +32,11 @@
     <key alias="rename" version="7.3.0">Omdøb</key>
     <key alias="restore" version="7.3.0">Gendan</key>
     <key alias="SetPermissionsForThePage">Sæt rettigheder for siden %0%</key>
+    <key alias="chooseWhereToCopy">Vælg hvor du vil kopiere</key>
     <key alias="chooseWhereToMove">Vælg hvortil du vil flytte</key>
-    <key alias="toInTheTreeStructureBelow">I træstrukturen nedenfor</key>
+    <key alias="toInTheTreeStructureBelow">til i træstrukturen nedenfor</key>
+    <key alias="wasMovedTo">blev flyttet til</key>
+    <key alias="wasCopiedTo">blev kopieret til</key>
     <key alias="rights">Rettigheder</key>
     <key alias="rollback">Fortryd ændringer</key>
     <key alias="sendtopublish">Send til udgivelse</key>
@@ -115,6 +118,8 @@
     <key alias="listNumeric">Nummerorden</key>
     <key alias="macroInsert">Indsæt makro</key>
     <key alias="pictureInsert">Indsæt billede</key>
+    <key alias="publishAndClose">Udgiv og luk</key>
+    <key alias="publishDescendants">Udgiv med undersider</key>
     <key alias="relations">Redigér relationer</key>
     <key alias="returnToList">Tilbage til listen</key>
     <key alias="save">Gem</key>
@@ -122,6 +127,7 @@
     <key alias="saveAndSchedule">Gem og planlæg</key>
     <key alias="saveToPublish">Gem og send til udgivelse</key>
     <key alias="saveListView">Gem listevisning</key>
+    <key alias="schedulePublish">Planlæg</key>
     <key alias="showPage">Forhåndsvisning</key>
     <key alias="showPageDisabled">Forhåndsvisning er deaktiveret fordi der ikke er nogen skabelon tildelt</key>
     <key alias="styleChoose">Vælg formattering</key>
@@ -139,6 +145,7 @@
     <key alias="delete">Brugeren har slettet indholdet</key>
     <key alias="unpublish">Brugeren har afpubliceret indholdet</key>
     <key alias="publish">Brugeren har gemt og udgivet indholdet</key>
+    <key alias="publishvariant">Brugeren har gemt og udgivet indholdet for sprogene: %0% </key>
     <key alias="save">Brugeren har gemt indholdet</key>
     <key alias="move">Brugeren har flyttet indholdet</key>
     <key alias="copy">Brugeren har kopieret indholdet</key>
@@ -177,6 +184,11 @@
     <key alias="validationErrorPropertyWithMoreThanOneMapping">Overførsel af egenskaber kunne ikke fuldføres, da en eller flere egenskaber er indstillet til at blive overført mere end én gang.</key>
     <key alias="validDocTypesNote">Kun andre dokumenttyper, der er gyldige på denne placering, vises.</key>
   </area>
+  <area alias="codefile">
+    <key alias="createFolderFailedById">Oprettelse af mappen under parent med ID %0% fejlede</key>
+    <key alias="createFolderFailedByName">Oprettelse af mappen under parent med navnet %0% fejlede</key>
+      <key alias="deleteItemFailed">Sletning af filen/mappen fejlede: %0%</key>
+  </area>
   <area alias="content">
     <key alias="isPublished" version="7.2">Udgivet</key>
     <key alias="about">Om siden</key>
@@ -209,13 +221,15 @@
     <key alias="nodeName">Sidetitel</key>
     <key alias="otherElements">Egenskaber</key>
     <key alias="parentNotPublished">Dette dokument er udgivet, men ikke synligt da den overliggende side '%0%' ikke er udgivet!</key>
-    <key alias="parentNotPublishedAnomaly">Upd: dette dokument er udgiver, men er ikke i cachen (intern fejl)</key>
+    <key alias="parentNotPublishedAnomaly">Ups: dette dokument er udgivet, men er ikke i cachen (intern fejl)</key>
     <key alias="getUrlException">Kunne ikke hente url'en</key>
     <key alias="routeError">Dette dokument er udgivet, men dets url ville kollidere med indholdet %0%</key>
     <key alias="publish">Udgiv</key>
     <key alias="published">Udgivet</key>
     <key alias="publishedPendingChanges">Udgivet (Ventede ændringer)</key>
     <key alias="publishStatus">Udgivelsesstatus</key>
+    <key alias="publishDescendantsHelp"><![CDATA[Klik <em>Udgiv med undersider</em> for at udgive <strong>%0%</strong> og alle sider under og dermed gøre deres indhold offentligt tilgængelige.]]></key>
+    <key alias="publishDescendantsWithVariantsHelp"><![CDATA[Klik <em>Udgiv med undersider</em> for at udgive <strong>de valgte sprog</strong> og de samme sprog for sider under og dermed gøre deres indhold offentligt tilgængelige.]]></key>
     <key alias="releaseDate">Udgivelsesdato</key>
     <key alias="unpublishDate">Afpubliceringsdato</key>
     <key alias="removeDate">Fjern dato</key>
@@ -243,6 +257,23 @@
     <key alias="addTextBox">Tilføj en ny tekstboks</key>
     <key alias="removeTextBox">Fjern denne tekstboks</key>
     <key alias="contentRoot">Indholdsrod</key>
+    <key alias="includeUnpublished">Medtag udkast: udgiv også ikke-publicerede sider.</key>
+    <key alias="isSensitiveValue">Denne værdi er skjult.Hvis du har brug for adgang til at se denne værdi, bedes du kontakte din web-administrator.</key>
+    <key alias="isSensitiveValue_short">Denne værdi er skjult.</key>
+    <key alias="languagesToPublishForFirstTime">Hvilke sprog vil du gerne udgive? Alle sprog med indhold gemmes!</key>
+    <key alias="languagesToPublish">Hvilke sprog vil du gerne udgive?</key>
+    <key alias="languagesToSave">Hvilke sprog vil du gerne gemme?</key>
+    <key alias="languagesToSaveForFirstTime">Alle sprog med indhold gemmes ved oprettelsen!</key>
+    <key alias="languagesToSendForApproval">Hvilke sprog vil du gerne sende til godkendelse?</key>
+    <key alias="languagesToSchedule">Hvilke sprog vil du gerne planlægge?</key>
+    <key alias="languagesToUnpublish">Vælg sproget du vil afpublicere. Afpublicering af et obligatorisk sprog vil afpublicere alle sprog.</key>
+    <key alias="publishedLanguages">Udgivne sprog</key>
+    <key alias="unpublishedLanguages">Ikke-udgivne sprog</key>
+    <key alias="unmodifiedLanguages">Uændrede sprog</key>
+    <key alias="readyToPublish">Klar til at udgive?</key>
+    <key alias="readyToSave">Klar til at gemme?</key>
+    <key alias="sendForApproval">Send til godkendelse</key>
+    <key alias="schedulePublishHelp">Vælg dato og klokkeslæt for at udgive og/eller afpublicere indholdet.</key>
   </area>
   <area alias="blueprints">
     <key alias="createBlueprintFrom">Opret en ny indholdsskabelon fra '%0%'</key>
@@ -260,6 +291,10 @@
     <key alias="disallowedFileType">Kan ikke uploade denne fil, den har ikke en godkendt filtype</key>
     <key alias="maxFileSize">Maks filstørrelse er</key>
     <key alias="mediaRoot">Medie rod</key>
+    <key alias="moveFailed">Flytning af mediet fejlede</key>
+    <key alias="copyFailed">Kopiering af mediet fejlede</key>
+    <key alias="createFolderFailed">Oprettelse af mappen under parent med id %0% fejlede</key>
+    <key alias="renameFolderFailed">Omdøbning af mappen med id %0% fejlede</key>
   </area>
   <area alias="member">
     <key alias="createNewMember">Opret et nyt medlem</key>
@@ -269,6 +304,7 @@
     <key alias="chooseNode">Hvor ønsker du at oprette den nye %0%</key>
     <key alias="createUnder">Opret under</key>
     <key alias="createContentBlueprint">Vælg den dokumenttype, du vil oprette en indholdsskabelon til</key>
+    <key alias="enterFolderName">Angiv et navn for mappen</key>
     <key alias="updateData">Vælg en type og skriv en titel</key>
     <key alias="noDocumentTypes" version="7.0"><![CDATA[Der kunne ikke findes nogen tilladte dokument typer. Du skal tillade disse i indstillinger under <strong>"dokument typer"</strong>.]]></key>
     <key alias="noMediaTypes" version="7.0"><![CDATA[Der kunne ikke findes nogen tilladte media typer. Du skal tillade disse i indstillinger under <strong>"media typer"</strong>.]]></key>
@@ -297,6 +333,8 @@
     <key alias="discardChanges">Kassér ændringer</key>
     <key alias="unsavedChanges">Du har ikke-gemte ændringer</key>
     <key alias="unsavedChangesWarning">Er du sikker på du vil navigere væk fra denne side? - du har ikke-gemte ændringer</key>
+    <key alias="confirmUnpublish">Afpublicering vil fjerne denne side og alle dets undersider fra websitet.</key>
+    <key alias="doctypeChangeWarning">Du har ikke-gemte ændringer. Hvis du ændrer dokumenttype, kasseres ændringerne.</key>
   </area>
   <area alias="bulk">
     <key alias="done">Færdig</key>
@@ -329,7 +367,6 @@
     <key alias="closeThisWindow">Luk denne dialog</key>
     <key alias="confirmdelete">Er du sikker på at du vil slette</key>
     <key alias="confirmdisable">Er du sikker på du vil deaktivere</key>
-    <key alias="confirmEmptyTrashcan">Afkryds venligst denne boks for at bekræfte sletningen af %0% enhed(er)</key>
     <key alias="confirmlogout">Er du sikker på at du vil forlade Umbraco?</key>
     <key alias="confirmSure">Er du sikker?</key>
     <key alias="cut">Klip</key>
@@ -342,6 +379,7 @@
     <key alias="insertlink">Indsæt link</key>
     <key alias="insertMacro">Indsæt makro</key>
     <key alias="inserttable">Indsæt tabel</key>
+    <key alias="languagedeletewarning">Dette vil slette sproget</key>
     <key alias="lastEdited">Sidst redigeret</key>
     <key alias="link">Link</key>
     <key alias="linkinternal">Internt link:</key>
@@ -366,8 +404,6 @@
     <key alias="siterepublishHelp">Websitets cache vil blive genopfrisket. Alt udgivet indhold vil blive opdateret, mens upubliceret indhold vil forblive upubliceret.</key>
     <key alias="tableColumns">Antal kolonner</key>
     <key alias="tableRows">Antal rækker</key>
-    <key alias="templateContentAreaHelp"><![CDATA[<strong>Vælg et placeholder id</strong> Ved at sætte et id på en placeholder kan du indskyde indhold fra undertemplates ved at referere til dette ID vha. et <code>&lt;asp:content /&gt;</code> element.]]></key>
-    <key alias="templateContentPlaceHolderHelp"><![CDATA[<strong>Vælg et placeholder id</strong> fra listen herunder. Du kan kun vælge id'er fra den nuværende masterskabelon.]]></key>
     <key alias="thumbnailimageclickfororiginal">Klik på billedet for at se den fulde størrelse</key>
     <key alias="treepicker">Vælg</key>
     <key alias="viewCacheItem">Se cache element</key>
@@ -397,6 +433,7 @@
     <key alias="account">konto</key>
     <key alias="selectEditor">Vælg editor</key>
     <key alias="selectSnippet">Vælg snippet</key>
+    <key alias="variantdeletewarning">Dette vil slette noden og alle dets sprog. Hvis du kun vil slette et sprog, så afpublicér det i stedet.</key>
   </area>
   <area alias="dictionaryItem">
     <key alias="description"><![CDATA[
@@ -565,7 +602,6 @@
     <key alias="orderBy">Sortér efter</key>
     <key alias="password">Kodeord</key>
     <key alias="path">Sti</key>
-    <key alias="placeHolderID">Placeholder ID</key>
     <key alias="pleasewait">Et øjeblik...</key>
     <key alias="previous">Forrige</key>
     <key alias="properties">Egenskaber</key>
@@ -769,7 +805,8 @@
     <key alias="relateToOriginal">Relater det kopierede element til originalen</key>
   </area>
   <area alias="notifications">
-    <key alias="editNotifications">Rediger dine notificeringer for %0%</key>
+    <key alias="editNotifications"><![CDATA[Vælg dine notificeringer for <strong>%0%</strong>]]></key>
+    <key alias="notificationsSavedFor">Notificeringer er gemt for</key>
     <key alias="mailBody"><![CDATA[
 Hej %0%
 
@@ -792,7 +829,10 @@ Mange hilsner fra Umbraco robotten
     <key alias="notifications">Notificeringer</key>
   </area>
   <area alias="packager">
+    <key alias="created">Oprettet</key>
+    <key alias="createPackage">Opret pakke</key>
     <key alias="chooseLocalPackageText">Vælg pakken fra din computer. Umbraco pakker er oftest en ".zip" fil</key>
+    <key alias="deletewarning">Dette vil slette pakken</key>
     <key alias="dropHere">Slip her for at uploade</key>
     <key alias="orClickHereToUpload">eller klik her for at vælge pakkefil</key>
     <key alias="uploadPackage">Upload pakke</key>
@@ -803,8 +843,12 @@ Mange hilsner fra Umbraco robotten
     <key alias="accept">Jeg accepterer</key>
     <key alias="termsOfUse">betingelser for anvendelse</key>
     <key alias="packageInstall">Installér pakke</key>
-    <key alias="installFinish">Afslut</key>
+    <key alias="installed">Installeret</key>
     <key alias="installedPackages">Installeret pakker</key>
+    <key alias="installLocal">Installér lokal</key>
+    <key alias="installFinish">Afslut</key>
+    <key alias="noConfigurationView">Denne pakke har ingen konfigurationsvisning</key>
+    <key alias="noPackagesCreated">Der er ikke blevet oprettet nogle pakker endnu</key>
     <key alias="noPackages">Du har ingen pakker installeret</key>
     <key alias="noPackagesDescription"><![CDATA[Du har ikke nogen pakker installeret. Du kan enten installere en lokal pakke ved at vælge den fra din computer eller gennemse de tilgængelige pakker ved hjælp af ikonet <strong>'Pakker'</strong> øverst til højre på din skærm]]></key>
     <key alias="packageSearch">Søg efter pakker</key>
@@ -827,13 +871,11 @@ Mange hilsner fra Umbraco robotten
     <key alias="packageCompatibilityDescription">Denne pakke er kompatibel med de følgende versioner af Umbraco, som rapporteret af community-medlemmer. Fuld kompatibilitet kan ikke garanteres for versioner rapporteret nedenfor 100%</key>
     <key alias="packageExternalSources">Eksterne kilder</key>
     <key alias="packageAuthor">Forfatter</key>
-    <key alias="packageDemonstration">Demonstration</key>
     <key alias="packageDocumentation">Dokumentation</key>
     <key alias="packageMetaData">Pakke meta data</key>
     <key alias="packageName">Pakkenavn</key>
     <key alias="packageNoItemsHeader">Pakken indeholder ingen elementer</key>
     <key alias="packageNoItemsText"><![CDATA[Denne pakkefil indeholder ingen elementer som kan af-installeres.<br/><br/>Du kan roligt fjerne denne fra systemet ved at klikke på "Fjern pakke" nedenfor.]]></key>
-    <key alias="packageNoUpgrades">Ingen opdateringer tilgængelige</key>
     <key alias="packageOptions">Pakkevalg</key>
     <key alias="packageReadme">Pakke læs mig</key>
     <key alias="packageRepository">Pakke opbevaringsbase</key>
@@ -843,13 +885,7 @@ Mange hilsner fra Umbraco robotten
     <key alias="packageUninstallHeader">Afinstallér pakke</key>
     <key alias="packageUninstallText"><![CDATA[Du kan fjerne markeringen på elementer du ikke ønsker at fjerne, på dette tidspunkt, nedenfor. Når du klikker 'bekræft' vil alle afkrydsede elemenet blive fjernet <br/>
 <span style="color: Red; font-weight: bold;">Bemærk:</span> at dokumenter og medier som afhænger af denne pakke vil muligvis holde op med at virke, så vær forsigtig. Hvis i tvivl, kontakt personen som har udviklet pakken.]]></key>
-    <key alias="packageUpgradeDownload">Download opdatering fra opbevaringsbasen</key>
-    <key alias="packageUpgradeHeader">Opdatér pakke</key>
-    <key alias="packageUpgradeInstructions">Opdateringsinstrukser</key>
-    <key alias="packageUpgradeText">Der er en tilgængelig opdatering til denne pakke. Du kan downloade den direkte fra Umbracos pakke opbevaringsbase.</key>
     <key alias="packageVersion">Pakke version</key>
-    <key alias="packageVersionHistory">Pakke versionshistorik</key>
-    <key alias="viewPackageWebsite">Se pakkeudviklerens website</key>
     <key alias="packageAlreadyInstalled">Pakke allerede installeret</key>
     <key alias="targetVersionMismatch">Denne pakke kan ikke installeres, den kræver en minimum Umbraco version af</key>
     <key alias="installStateUninstalling">Afinstallerer...</key>
@@ -868,22 +904,23 @@ Mange hilsner fra Umbraco robotten
     <key alias="removeSpecialFormattering">Indsæt, men fjern formattering som ikke bør være på en webside (Anbefales)</key>
   </area>
   <area alias="publicAccess">
-    <key alias="paAdvanced">Rollebaseret beskyttelse</key>
-    <key alias="paAdvancedHelp">Hvis du ønsker at kontrollere adgang til siden ved hjælp af rollebaseret godkendelse via Umbracos medlemsgrupper.</key>
-    <key alias="paAdvancedNoGroups">Du skal oprette en medlemsgruppe før du kan bruge rollebaseret godkendelse</key>
+    <key alias="paGroups">Gruppebaseret beskyttelse</key>
+    <key alias="paGroupsHelp">Hvis du ønsker at give adgang til alle medlemmer af specifikke medlemsgrupper</key>
+    <key alias="paGroupsNoGroups">Du skal oprette en medlemsgruppe før du kan bruge gruppebaseret beskyttelse</key>
     <key alias="paErrorPage">Fejlside</key>
     <key alias="paErrorPageHelp">Brugt når folk er logget ind, men ingen adgang</key>
-    <key alias="paHowWould">Vælg hvordan siden skal beskyttes</key>
-    <key alias="paIsProtected">%0% er nu beskyttet</key>
-    <key alias="paIsRemoved">Beskyttelse fjernet fra %0%</key>
+    <key alias="paHowWould"><![CDATA[Vælg hvordan siden <strong>%0%</strong> skal beskyttes]]></key>
+    <key alias="paIsProtected"><![CDATA[<strong>%0%</strong> er nu beskyttet]]></key>
+    <key alias="paIsRemoved"><![CDATA[Beskyttelse fjernet fra <strong>%0%</strong>]]></key>
     <key alias="paLoginPage">Log ind-side</key>
     <key alias="paLoginPageHelp">Vælg siden der indeholder log ind-formularen</key>
-    <key alias="paRemoveProtection">Fjern beskyttelse</key>
+    <key alias="paRemoveProtection">Fjern beskyttelse...</key>
+    <key alias="paRemoveProtectionConfirm"><![CDATA[Er du sikker på at du vil fjerne beskyttelsen fra siden <strong>%0%</strong>?]]></key>
     <key alias="paSelectPages">Vælg siderne der indeholder log ind-formularer og fejlmeddelelser</key>
-    <key alias="paSelectRoles">Vælg de roller der har adgang til denne side</key>
-    <key alias="paSetLogin">Indstil login og kodeord for denne side</key>
-    <key alias="paSimple">Enkel brugerbeskyttelse</key>
-    <key alias="paSimpleHelp">Hvis du blot ønsker at opsætte simpel beskyttelse ved hjælp af et enkelt login og kodeord</key>
+    <key alias="paSelectGroups"><![CDATA[Vælg de grupper der har adgang til siden <strong>%0%</strong>]]></key>
+    <key alias="paSelectMembers"><![CDATA[Vælg de medlemmer der har adgang til siden <strong>%0%</strong>]]></key>
+    <key alias="paMembers">Adgang til enkelte medlemmer</key>
+    <key alias="paMembersHelp">Hvis du ønsker at give adgang til enkelte medlemmer</key>
   </area>
   <area alias="publish">
     <key alias="contentPublishedFailedAwaitingRelease">Udgivelsen kunne ikke udgives da publiceringsdato er sat</key>
@@ -928,6 +965,7 @@ Mange hilsner fra Umbraco robotten
     <key alias="undoEditCrop">Fortryd</key>
   </area>
   <area alias="rollback">
+    <key alias="headline">Vælg en version at sammenligne med den nuværende version</key>
     <key alias="currentVersion">Nuværende version</key>
     <key alias="diffHelp"><![CDATA[Her vises forskellene mellem den nuværende version og den valgte version<br /><del>Rød</del> tekst vil ikke blive vist i den valgte version. <ins>Grøn betyder tilføjet</ins>]]></key>
     <key alias="documentRolledBack">Dokument tilbagerullet</key>
@@ -947,6 +985,7 @@ Mange hilsner fra Umbraco robotten
     <key alias="installer">Umbraco konfigurationsguide</key>
     <key alias="media">Mediearkiv</key>
     <key alias="member">Medlemmer</key>
+    <key alias="packages">Pakker</key>
     <key alias="newsletters">Nyhedsbreve</key>
     <key alias="settings">Indstillinger</key>
     <key alias="statistics">Statistik</key>
@@ -1053,6 +1092,7 @@ Mange hilsner fra Umbraco robotten
     <key alias="tabRules">Editor</key>
   </area>
   <area alias="template">
+    <key alias="deleteByIdFailed">Sletning af skabelonen med ID %0% fejlede</key>
     <key alias="edittemplate">Rediger skabelon</key>
     <key alias="insertSections">Sektioner</key>
     <key alias="insertContentArea">Indsæt indholdsområde</key>
@@ -1209,6 +1249,21 @@ Mange hilsner fra Umbraco robotten
     <key alias="memberCanEdit">Medlem kan redigere</key>
     <key alias="showOnMemberProfile">Vis på medlemsprofil</key>
     <key alias="tabHasNoSortOrder">fane har ingen sorteringsrækkefølge</key>
+    <key alias="elementHeading">Er en Element-type</key>
+    <key alias="elementDescription">En Element-type er tiltænkt brug i f.eks. Nested Content, ikke i indholdstræet</key>
+    <key alias="elementDoesNotSupport">Dette benyttes ikke for en Element-type</key>
+  </area>
+  <area alias="languages">
+      <key alias="addLanguage">Tilføj sprog</key>
+      <key alias="mandatoryLanguage">Påkrævet sprog</key>
+      <key alias="mandatoryLanguageHelp">Egenskaber på dette sprog skal være udfyldt før noden kan blive udgivet.</key>
+      <key alias="defaultLanguage">Standard sprog</key>
+      <key alias="defaultLanguageHelp">Et Umbraco site kan kun have et standard sprog.</key>
+      <key alias="changingDefaultLanguageWarning">Ved at skifte standardsprog kan resultere i standard indhold mangler.</key>
+      <key alias="fallsbackToLabel">Fallsback til</key>
+      <key alias="noFallbackLanguageOption">Ingen fallback sprog</key>
+      <key alias="fallbackLanguageDescription">For at tillade flersproget indhold til at falde tilbage på et andet sprog, hvis det ikke er tilgængelig i det anmodet sprog, vælg det her.</key>
+      <key alias="fallbackLanguage">Fallback sprog</key>
   </area>
   <area alias="templateEditor">
     <key alias="alternativeField">Alternativt felt</key>
@@ -1273,9 +1328,9 @@ Mange hilsner fra Umbraco robotten
     <key alias="macros">Makroer</key>
     <key alias="mediaTypes">Medietyper</key>
     <key alias="member">Medlemmer</key>
-    <key alias="memberGroups">Medlemsgruppe</key>
+    <key alias="memberGroups">Medlemsgrupper</key>
     <key alias="memberRoles">Roller</key>
-    <key alias="memberTypes">Medlemstype</key>
+    <key alias="memberTypes">Medlemstyper</key>
     <key alias="documentTypes">Dokumenttyper</key>
     <key alias="relationTypes">Relationstyper</key>
     <key alias="packager">Pakker</key>
@@ -1376,7 +1431,7 @@ Mange hilsner fra Umbraco robotten
     <key alias="userInvited">er blevet inviteret</key>
     <key alias="userInvitedSuccessHelp">En invitation er blevet sendt til den nye bruger med oplysninger om, hvordan man logger ind i Umbraco.</key>
     <key alias="userinviteWelcomeMessage">Hej og velkommen til Umbraco! På bare 1 minut vil du være klar til at komme i gang, vi skal bare have dig til at oprette en adgangskode og tilføje et billede til din avatar.</key>
-    <key alias="userinviteAvatarMessage">Upload et billede for at gøre det nemt for andre brugere at genkende dig.</key>
+    <key alias="userinviteAvatarMessage">Hvis du uploader et billede af dig selv, gør du det nemt for andre brugere at genkende dig. Klik på cirklen ovenfor for at uploade et billede.</key>
     <key alias="writer">Forfatter</key>
     <key alias="change">Skift</key>
     <key alias="yourProfile">Din profil</key>
@@ -1431,8 +1486,8 @@ Mange hilsner fra Umbraco robotten
   <area alias="recycleBin">
     <key alias="contentTrashed">Slettet indhold med Id: {0} Relateret til original "parent" med id: {1}</key>
     <key alias="mediaTrashed">Slettet medie med Id: {0} relateret til original "parent" / mappe med id: {1}</key>
-    <key alias="itemCannotBeRestored">Kan ikke automatisk genoprette dette dokument/medie</key>
-    <key alias="noRestoreRelation">Der findes ikke nogen "Genopret" relation for dette dokument/medie. Brug "Flyt" muligheden fra menuen for at flytte det manuelt.</key>
-    <key alias="restoreUnderRecycled">Det dokument/medie du ønsker at genoprette under ('%0%') er i skraldespanden. Brug "Flyt" muligheden fra menuen for at flytte det manuelt.</key>
+    <key alias="itemCannotBeRestored">Kan ikke automatisk genoprette dette element</key>
+    <key alias="itemCannotBeRestoredHelpText">Der er ikke nogen placering hvor dette element automatisk kan genoprettes. Du kan flytte elementet manuelt i træet nedenfor.</key>
+    <key alias="wasRestored">blev genoprettet under</key>
   </area>
 </language>

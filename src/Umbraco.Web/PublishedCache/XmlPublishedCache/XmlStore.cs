@@ -34,7 +34,7 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
     /// Represents the Xml storage for the Xml published cache.
     /// </summary>
     /// <remarks>
-    /// <para>One instance of <see cref="XmlStore"/> is instanciated by the <see cref="PublishedSnapshotService"/> and
+    /// <para>One instance of <see cref="XmlStore"/> is instantiated by the <see cref="PublishedSnapshotService"/> and
     /// then passed to all <see cref="PublishedContentCache"/> instances that are created (one per request).</para>
     /// <para>This class should *not* be public.</para>
     /// </remarks>
@@ -44,15 +44,16 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
         private readonly IMediaRepository _mediaRepository;
         private readonly IMemberRepository _memberRepository;
         private readonly IGlobalSettings _globalSettings;
+        private readonly IEntityXmlSerializer _entitySerializer;
         private XmlStoreFilePersister _persisterTask;
         private volatile bool _released;
         private bool _withRepositoryEvents;
 
         private readonly IPublishedSnapshotAccessor _publishedSnapshotAccessor;
         private readonly PublishedContentTypeCache _contentTypeCache;
-        private readonly IEnumerable<IUrlSegmentProvider> _segmentProviders;
         private readonly RoutesCache _routesCache;
-        private readonly ServiceContext _serviceContext; // fixme WHY
+        private readonly IContentTypeService _contentTypeService;
+        private readonly IContentService _contentService;
         private readonly IScopeProvider _scopeProvider;
 
         #region Constructors
@@ -61,22 +62,23 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
         /// Initializes a new instance of the <see cref="XmlStore"/> class.
         /// </summary>
         /// <remarks>The default constructor will boot the cache, load data from file or database, /// wire events in order to manage changes, etc.</remarks>
-        public XmlStore(ServiceContext serviceContext, IScopeProvider scopeProvider, RoutesCache routesCache, PublishedContentTypeCache contentTypeCache,
-            IEnumerable<IUrlSegmentProvider> segmentProviders, IPublishedSnapshotAccessor publishedSnapshotAccessor, MainDom mainDom, IDocumentRepository documentRepository, IMediaRepository mediaRepository, IMemberRepository memberRepository, IGlobalSettings globalSettings)
-            : this(serviceContext, scopeProvider, routesCache, contentTypeCache, segmentProviders, publishedSnapshotAccessor, mainDom, false, false, documentRepository, mediaRepository, memberRepository, globalSettings)
+        public XmlStore(IContentTypeService contentTypeService, IContentService contentService, IScopeProvider scopeProvider, RoutesCache routesCache, PublishedContentTypeCache contentTypeCache,
+            IPublishedSnapshotAccessor publishedSnapshotAccessor, MainDom mainDom, IDocumentRepository documentRepository, IMediaRepository mediaRepository, IMemberRepository memberRepository, IGlobalSettings globalSettings, IEntityXmlSerializer entitySerializer)
+            : this(contentTypeService, contentService, scopeProvider, routesCache, contentTypeCache, publishedSnapshotAccessor, mainDom, false, false, documentRepository, mediaRepository, memberRepository, globalSettings, entitySerializer)
         { }
 
         // internal for unit tests
         // no file nor db, no config check
-        // fixme - er, we DO have a DB?
-        internal XmlStore(ServiceContext serviceContext, IScopeProvider scopeProvider, RoutesCache routesCache, PublishedContentTypeCache contentTypeCache,
-            IEnumerable<IUrlSegmentProvider> segmentProviders, IPublishedSnapshotAccessor publishedSnapshotAccessor, MainDom mainDom,
-            bool testing, bool enableRepositoryEvents, IDocumentRepository documentRepository, IMediaRepository mediaRepository, IMemberRepository memberRepository, IGlobalSettings globalSettings)
+        // TODO: er, we DO have a DB?
+        internal XmlStore(IContentTypeService contentTypeService, IContentService contentService, IScopeProvider scopeProvider, RoutesCache routesCache, PublishedContentTypeCache contentTypeCache,
+            IPublishedSnapshotAccessor publishedSnapshotAccessor, MainDom mainDom,
+            bool testing, bool enableRepositoryEvents, IDocumentRepository documentRepository, IMediaRepository mediaRepository, IMemberRepository memberRepository, IGlobalSettings globalSettings, IEntityXmlSerializer entitySerializer)
         {
             if (testing == false)
                 EnsureConfigurationIsValid();
 
-            _serviceContext = serviceContext;
+            _contentTypeService = contentTypeService;
+            _contentService = contentService;
             _scopeProvider = scopeProvider;
             _routesCache = routesCache;
             _contentTypeCache = contentTypeCache;
@@ -85,8 +87,8 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
             _mediaRepository = mediaRepository;
             _memberRepository = memberRepository;
             _globalSettings = globalSettings;
+            _entitySerializer = entitySerializer;
             _xmlFileName = IOHelper.MapPath(SystemFiles.GetContentCacheXml(_globalSettings));
-            _segmentProviders = segmentProviders;
 
             if (testing)
             {
@@ -110,7 +112,7 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
             _mediaRepository = mediaRepository;
             _memberRepository = memberRepository;
             _xmlFileEnabled = false;
-            _xmlFileName = IOHelper.MapPath(SystemFiles.GetContentCacheXml(UmbracoConfig.For.GlobalSettings()));
+            _xmlFileName = IOHelper.MapPath(SystemFiles.GetContentCacheXml(Current.Configs.Global()));
             // do not plug events, we may not have what it takes to handle them
         }
 
@@ -124,7 +126,7 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
             _memberRepository = memberRepository;
             GetXmlDocument = getXmlDocument ?? throw new ArgumentNullException(nameof(getXmlDocument));
             _xmlFileEnabled = false;
-            _xmlFileName = IOHelper.MapPath(SystemFiles.GetContentCacheXml(UmbracoConfig.For.GlobalSettings()));
+            _xmlFileName = IOHelper.MapPath(SystemFiles.GetContentCacheXml(Current.Configs.Global()));
             // do not plug events, we may not have what it takes to handle them
         }
 
@@ -253,16 +255,16 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
         private readonly bool _xmlFileEnabled = true;
 
         // whether the disk cache is enabled
-        private bool XmlFileEnabled => _xmlFileEnabled && UmbracoConfig.For.UmbracoSettings().Content.XmlCacheEnabled;
+        private bool XmlFileEnabled => _xmlFileEnabled && Current.Configs.Settings().Content.XmlCacheEnabled;
 
         // whether the disk cache is enabled and to update the disk cache when xml changes
-        private bool SyncToXmlFile => XmlFileEnabled && UmbracoConfig.For.UmbracoSettings().Content.ContinouslyUpdateXmlDiskCache;
+        private bool SyncToXmlFile => XmlFileEnabled && Current.Configs.Settings().Content.ContinouslyUpdateXmlDiskCache;
 
         // whether the disk cache is enabled and to reload from disk cache if it changes
-        private bool SyncFromXmlFile => XmlFileEnabled && UmbracoConfig.For.UmbracoSettings().Content.XmlContentCheckForDiskChanges;
+        private bool SyncFromXmlFile => XmlFileEnabled && Current.Configs.Settings().Content.XmlContentCheckForDiskChanges;
 
         // whether _xml is immutable or not (achieved by cloning before changing anything)
-        private static bool XmlIsImmutable => UmbracoConfig.For.UmbracoSettings().Content.CloneXmlContent;
+        private static bool XmlIsImmutable => Current.Configs.Settings().Content.CloneXmlContent;
 
         // whether to keep version of everything (incl. medias & members) in cmsPreviewXml
         // for audit purposes - false by default, not in umbracoSettings.config
@@ -399,7 +401,7 @@ namespace Umbraco.Web.PublishedCache.XmlPublishedCache
             try
             {
                 var dtdInner = new StringBuilder();
-                var contentTypes = _serviceContext.ContentTypeService.GetAll();
+                var contentTypes = _contentTypeService.GetAll();
                 // though aliases should be safe and non null already?
                 var aliases = contentTypes.Select(x => x.Alias.ToSafeAlias()).WhereNotNull();
                 foreach (var alias in aliases)
@@ -556,7 +558,7 @@ AND (umbracoNode.id=@id)";
 
         public XmlDocument GetPreviewXml(int contentId, bool includeSubs)
         {
-            var content = _serviceContext.ContentService.GetById(contentId);
+            var content = _contentService.GetById(contentId);
 
             var doc = (XmlDocument)Xml.Clone();
             if (content == null) return doc;
@@ -600,7 +602,7 @@ AND (umbracoNode.id=@id)";
         // should we have async versions that would do: ?
         // var releaser = await _xmlLock.LockAsync();
         //
-        // fixme - not sure about the "resync current published snapshot" thing here, see 7.6...
+        // TODO: not sure about the "resync current published snapshot" thing here, see 7.6...
 
         // gets a locked safe read access to the main xml
         private SafeXmlReaderWriter GetSafeXmlReader()
@@ -639,7 +641,7 @@ AND (umbracoNode.id=@id)";
 
         public void EnsureFilePermission()
         {
-            // FIXME - but do we really have a store, initialized, at that point?
+            // TODO: but do we really have a store, initialized, at that point?
             var filename = _xmlFileName + ".temp";
             File.WriteAllText(filename, "TEMP");
             File.Delete(filename);
@@ -749,7 +751,7 @@ AND (umbracoNode.id=@id)";
         {
             // using that one method because we want to have proper indent
             // and in addition, writing async is never fully async because
-            // althouth the writer is async, xml.WriteTo() will not async
+            // although the writer is async, xml.WriteTo() will not async
 
             // that one almost works but... "The elements are indented as long as the element
             // does not contain mixed content. Once the WriteString or WriteWhitespace method
@@ -916,7 +918,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
         // assumes xml lock
         private void LoadXmlTreeFromDatabaseLocked(SafeXmlReaderWriter safeXml)
         {
-            // initialise the document ready for the composition of content
+            // initialize the document ready for the composition of content
             var xml = new XmlDocument();
             InitializeXml(xml, GetDtd());
 
@@ -971,7 +973,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
                 var xmlDtos = scope.Database.Query<XmlDto>(ReadMoreCmsContentXmlSql,
                     new { /*@nodeObjectType =*/ nodeObjectType });
 
-                // Initialise the document ready for the final composition of content
+                // Initialize the document ready for the final composition of content
                 InitializeXml(xmlDoc, string.Empty);
 
                 XmlNode parent = null;
@@ -1065,7 +1067,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
                         continue;
                     }
 
-                    var content = _serviceContext.ContentService.GetById(payload.Id);
+                    var content = _contentService.GetById(payload.Id);
                     var current = safeXml.Xml.GetElementById(payload.Id.ToInvariantString());
 
                     if (content == null || content.Published == false || content.Trashed)
@@ -1100,7 +1102,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
                                 id = content.Id
                             });
 
-                        // 'using' the enumerator ensures that the enumeration is properly terminated even if abandonned
+                        // 'using' the enumerator ensures that the enumeration is properly terminated even if abandoned
                         // otherwise, it would leak an open reader & an un-released database connection
                         // see PetaPoco.Query<TRet>(Type[] types, Delegate cb, string sql, params object[] args)
                         // and read http://blogs.msdn.com/b/oldnewthing/archive/2008/08/14/8862242.aspx
@@ -1241,7 +1243,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
             // the types will be reloaded if/when needed
             foreach (var payload in payloads)
                 _contentTypeCache.ClearDataType(payload.Id);
-            
+
             foreach (var payload in payloads)
                 Current.Logger.Debug<XmlStore>("Notified {RemovedStatus} for data type {payload.Id}",
                     payload.Removed ? "Removed" : "Refreshed",
@@ -1346,7 +1348,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
                 if (docNode.Name == currentNode.Name)
                 {
                     // name has not changed, safe to just update the current node
-                    // by transfering values eg copying the attributes, and importing the data elements
+                    // by transferring values eg copying the attributes, and importing the data elements
                     TransferValuesFromDocumentXmlToPublishedXml(docNode, currentNode);
 
                     // if moving, move the node to the new parent
@@ -1536,7 +1538,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
             var entity = args.Entity;
 
             // serialize edit values for preview
-            var editXml = EntityXmlSerializer.Serialize(_serviceContext.ContentService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, entity, false).ToDataString();
+            var editXml = _entitySerializer.Serialize(entity, false).ToDataString();
 
             // change below to write only one row - not one per version
             var dto1 = new PreviewXmlDto
@@ -1557,15 +1559,15 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
             // need to update the published xml if we're saving the published version,
             // or having an impact on that version - we update the published xml even when masked
 
-            // fixme - in the repo... either its 'unpublished' and 'publishing', or 'published' and 'published', this has changed!
-            // fixme - what are we serializing really? which properties?
+            // TODO: in the repo... either its 'unpublished' and 'publishing', or 'published' and 'published', this has changed!
+            // TODO: what are we serializing really? which properties?
 
             // if not publishing, no change to published xml
             if (((Content) entity).PublishedState != PublishedState.Publishing)
                 return;
 
             // serialize published values for content cache
-            var publishedXml = EntityXmlSerializer.Serialize(_serviceContext.ContentService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, entity, true).ToDataString();
+            var publishedXml = _entitySerializer.Serialize(entity, true).ToDataString();
             var dto2 = new ContentXmlDto { NodeId = entity.Id, Xml = publishedXml };
             OnRepositoryRefreshed(db, dto2);
 
@@ -1581,7 +1583,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
             if (entity.Trashed)
                 db.Execute("DELETE FROM cmsContentXml WHERE nodeId=@id", new { id = entity.Id });
 
-            var xml = EntityXmlSerializer.Serialize(_serviceContext.MediaService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, entity).ToDataString();
+            var xml = _entitySerializer.Serialize(entity).ToDataString();
 
             var dto1 = new ContentXmlDto { NodeId = entity.Id, Xml = xml };
             OnRepositoryRefreshed(db, dto1);
@@ -1592,7 +1594,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
             var db = args.Scope.Database;
             var entity = args.Entity;
 
-            var xml = EntityXmlSerializer.Serialize(_serviceContext.DataTypeService, _serviceContext.LocalizationService, entity).ToDataString();
+            var xml = _entitySerializer.Serialize(entity).ToDataString();
 
             var dto1 = new ContentXmlDto { NodeId = entity.Id, Xml = xml };
             OnRepositoryRefreshed(db, dto1);
@@ -1667,7 +1669,7 @@ ORDER BY umbracoNode.level, umbracoNode.sortOrder";
 
         // RepositoryCacheMode.Scoped because we do NOT want to use the L2 cache that may be out-of-sync
         // hopefully this does not cause issues and we're not nested in another scope w/different mode
-        // fixme - well, guess what?
+        // TODO: well, guess what?
         // original code made sure the repository used no cache
         // now we're using the Scoped scope cache mode
         // and then?
@@ -1749,7 +1751,7 @@ WHERE cmsContentXml.nodeId IN (
                 var descendants = _documentRepository.GetPage(query, pageIndex++, groupSize, out total, null, Ordering.By("Path"));
                 const bool published = true; // contentXml contains published content!
                 var items = descendants.Select(c => new ContentXmlDto { NodeId = c.Id, Xml =
-                    EntityXmlSerializer.Serialize(_serviceContext.ContentService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, c, published).ToDataString() }).ToArray();
+                    _entitySerializer.Serialize(c, published).ToDataString() }).ToArray();
                 db.BulkInsertRecords(items);
                 processed += items.Length;
             } while (processed < total);
@@ -1817,14 +1819,14 @@ WHERE cmsPreviewXml.nodeId IN (
             long total;
             do
             {
-                // .GetPagedResultsByQuery implicitely adds ({Constants.DatabaseSchema.Tables.Document}.newest = 1) which
+                // .GetPagedResultsByQuery implicitly adds ({Constants.DatabaseSchema.Tables.Document}.newest = 1) which
                 // is what we want for preview (ie latest version of a content, published or not)
                 var descendants = _documentRepository.GetPage(query, pageIndex++, groupSize, out total, null, Ordering.By("Path"));
                 const bool published = true; // previewXml contains edit content!
                 var items = descendants.Select(c => new PreviewXmlDto
                 {
                     NodeId = c.Id,
-                    Xml = EntityXmlSerializer.Serialize(_serviceContext.ContentService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, c, published).ToDataString()
+                    Xml = _entitySerializer.Serialize(c, published).ToDataString()
                 }).ToArray();
                 db.BulkInsertRecords(items);
                 processed += items.Length;
@@ -1894,7 +1896,7 @@ WHERE cmsContentXml.nodeId IN (
             {
                 var descendants = _mediaRepository.GetPage(query, pageIndex++, groupSize, out total, null, Ordering.By("Path"));
                 var items = descendants.Select(m => new ContentXmlDto { NodeId = m.Id, Xml =
-                    EntityXmlSerializer.Serialize(_serviceContext.MediaService, _serviceContext.DataTypeService, _serviceContext.UserService, _serviceContext.LocalizationService, _segmentProviders, m).ToDataString() }).ToArray();
+                    _entitySerializer.Serialize(m).ToDataString() }).ToArray();
                 db.BulkInsertRecords(items);
                 processed += items.Length;
             } while (processed < total);
@@ -1962,7 +1964,7 @@ WHERE cmsContentXml.nodeId IN (
             do
             {
                 var descendants = _memberRepository.GetPage(query, pageIndex++, groupSize, out total, null, Ordering.By("Path"));
-                var items = descendants.Select(m => new ContentXmlDto { NodeId = m.Id, Xml = EntityXmlSerializer.Serialize(_serviceContext.DataTypeService, _serviceContext.LocalizationService, m).ToDataString() }).ToArray();
+                var items = descendants.Select(m => new ContentXmlDto { NodeId = m.Id, Xml = _entitySerializer.Serialize(m).ToDataString() }).ToArray();
                 db.BulkInsertRecords(items);
                 processed += items.Length;
             } while (processed < total);
@@ -2025,7 +2027,7 @@ AND cmsPreviewXml.nodeId IS NULL OR cmsPreviewXml.xml NOT LIKE '% key=""'
         {
             // every non-trashed media item should have a corresponding row in cmsContentXml
             // and that row should have the key="..." attribute
-            // fixme - where's the trashed test here?
+            // TODO: where's the trashed test here?
 
             var mediaObjectType = Constants.ObjectTypes.Media;
             var db = scope.Database;

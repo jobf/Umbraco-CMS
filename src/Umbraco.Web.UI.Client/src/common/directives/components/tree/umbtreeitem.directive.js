@@ -29,11 +29,11 @@ angular.module("umbraco.directives")
             currentNode: '=',
             enablelistviewexpand: '@',
             node: '=',
-            tree: '='
+            tree: '=',
+            isDialog: '='
         },
         
         link: function (scope, element, attrs, umbTreeCtrl) {
-
             localizationService.localize("general_search").then(function (value) {
                 scope.searchAltText = value;
             });
@@ -61,7 +61,7 @@ angular.module("umbraco.directives")
                     return '';
                 }
 
-                //TODO: This is called constantly because as a method in a template it's re-evaluated pretty much all the time
+                // TODO: This is called constantly because as a method in a template it's re-evaluated pretty much all the time
                 // it would be better if we could cache the processing. The problem is that some of these things are dynamic.
 
                 var css = [];                
@@ -77,7 +77,13 @@ angular.module("umbraco.directives")
                 //is this the current action node (this is not the same as the current selected node!)
                 var actionNode = appState.getMenuState("currentNode");
                 if (actionNode) {
-                    if (actionNode.id === node.id) {
+                    if (actionNode.id === node.id && String(actionNode.id) !== "-1") {
+                        css.push("active");
+                    }
+
+                    // special handling of root nodes with id -1 
+                    // as there can be many nodes with id -1 in a tree we need to check the treeAlias instead
+                    if (String(actionNode.id) === "-1" && actionNode.metaData.treeAlias === node.metaData.treeAlias) {
                         css.push("active");
                     }
                 }

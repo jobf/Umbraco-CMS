@@ -15,7 +15,7 @@ using Umbraco.Tests.Testing;
 
 namespace Umbraco.Tests.Persistence.NPocoTests
 {
-    // fixme.npoco - what shall we do with those tests?
+    // FIXME: npoco - what shall we do with those tests?
     //
     [TestFixture, Ignore("fixme - ignored test")]
     [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
@@ -129,9 +129,9 @@ namespace Umbraco.Tests.Persistence.NPocoTests
 
             contentService.GetRootContent();
 
-            contentService.GetContentForExpiration();
+            contentService.GetContentForExpiration(DateTime.Now);
 
-            contentService.GetContentForRelease();
+            contentService.GetContentForRelease(DateTime.Now);
 
             ((ContentService)contentService).GetPublishedDescendants(new Content("Test", -1, new ContentType(-1))
             {

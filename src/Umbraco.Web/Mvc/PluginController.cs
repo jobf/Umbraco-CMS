@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Web.Mvc;
-using LightInject;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
@@ -28,7 +27,7 @@ namespace Umbraco.Web.Mvc
 
         // note
         // properties marked as [Inject] below will be property-injected (vs constructor-injected) in
-        // order to keep the constuctor as light as possible, so that ppl implementing eg a SurfaceController
+        // order to keep the constructor as light as possible, so that ppl implementing eg a SurfaceController
         // don't need to implement complex constructors + need to refactor them each time we change ours.
         // this means that these properties have a setter.
         // what can go wrong?
@@ -36,38 +35,32 @@ namespace Umbraco.Web.Mvc
         /// <summary>
         /// Gets or sets the Umbraco context.
         /// </summary>
-        [Inject]
-        public virtual UmbracoContext UmbracoContext { get; set; }
+        public virtual UmbracoContext UmbracoContext { get; }
 
         /// <summary>
         /// Gets or sets the database context.
         /// </summary>
-        [Inject]
-        public IUmbracoDatabaseFactory DatabaseFactory { get; set; }
+        public IUmbracoDatabaseFactory DatabaseFactory { get; }
 
         /// <summary>
         /// Gets or sets the services context.
         /// </summary>
-        [Inject]
-        public ServiceContext Services { get; set; }
+        public ServiceContext Services { get; }
 
         /// <summary>
         /// Gets or sets the application cache.
         /// </summary>
-        [Inject]
-        public CacheHelper ApplicationCache { get; set;  }
+        public AppCaches AppCaches { get;  }
 
         /// <summary>
         /// Gets or sets the logger.
         /// </summary>
-        [Inject]
-        public ILogger Logger { get; set; }
+        public ILogger Logger { get; }
 
         /// <summary>
         /// Gets or sets the profiling logger.
         /// </summary>
-        [Inject]
-        public ProfilingLogger ProfilingLogger { get; set; }
+        public IProfilingLogger ProfilingLogger { get; }
 
         /// <summary>
         /// Gets the membership helper.
@@ -82,7 +75,7 @@ namespace Umbraco.Web.Mvc
             get
             {
                 return _umbracoHelper
-                    ?? (_umbracoHelper = new UmbracoHelper(UmbracoContext, Services, ApplicationCache));
+                    ?? (_umbracoHelper = new UmbracoHelper(UmbracoContext, Services));
             }
             internal set // tests
             {
@@ -94,6 +87,28 @@ namespace Umbraco.Web.Mvc
         /// Gets metadata for this instance.
         /// </summary>
         internal PluginControllerMetadata Metadata => GetMetadata(GetType());
+
+        protected PluginController()
+            : this(
+                  Current.Factory.GetInstance<UmbracoContext>(),
+                  Current.Factory.GetInstance<IUmbracoDatabaseFactory>(),
+                  Current.Factory.GetInstance<ServiceContext>(),
+                  Current.Factory.GetInstance<AppCaches>(),
+                  Current.Factory.GetInstance<ILogger>(),
+                  Current.Factory.GetInstance<IProfilingLogger>()
+            )
+        {
+        }
+
+        protected PluginController(UmbracoContext umbracoContext, IUmbracoDatabaseFactory databaseFactory, ServiceContext services, AppCaches appCaches, ILogger logger, IProfilingLogger profilingLogger)
+        {
+            UmbracoContext = umbracoContext;
+            DatabaseFactory = databaseFactory;
+            Services = services;
+            AppCaches = appCaches;
+            Logger = logger;
+            ProfilingLogger = profilingLogger;
+        }
 
         /// <summary>
         /// Gets metadata for a controller type.

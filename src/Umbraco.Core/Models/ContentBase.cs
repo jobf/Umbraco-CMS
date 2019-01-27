@@ -128,14 +128,14 @@ namespace Umbraco.Core.Models
 
         /// <summary>
         /// Gets the enumeration of property groups for the entity.
-        /// fixme is a proxy, kill this
+        /// TODO: remove this proxy method
         /// </summary>
         [IgnoreDataMember]
         public IEnumerable<PropertyGroup> PropertyGroups => ContentTypeBase.CompositionPropertyGroups;
 
         /// <summary>
         /// Gets the numeration of property types for the entity.
-        /// fixme is a proxy, kill this
+        /// TODO: remove this proxy method
         /// </summary>
         [IgnoreDataMember]
         public IEnumerable<PropertyType> PropertyTypes => ContentTypeBase.CompositionPropertyTypes;
@@ -159,7 +159,7 @@ namespace Umbraco.Core.Models
         /// <inheritdoc />
         [DataMember]
         public virtual IReadOnlyDictionary<string, ContentCultureInfos> CultureInfos => _cultureInfos ?? NoInfos;
-        
+
         /// <inheritdoc />
         public string GetCultureName(string culture)
         {
@@ -222,6 +222,12 @@ namespace Umbraco.Core.Models
                 _cultureInfos = null;
         }
 
+        protected void TouchCultureInfo(string culture)
+        {
+            if (_cultureInfos == null || !_cultureInfos.TryGetValue(culture, out var infos)) return;
+            _cultureInfos.AddOrUpdate(culture, infos.Name, DateTime.Now);
+        }
+
         // internal for repository
         internal void SetCultureInfo(string culture, string name, DateTime date)
         {
@@ -235,7 +241,7 @@ namespace Umbraco.Core.Models
             {
                 _cultureInfos = new ContentCultureInfosCollection();
                 _cultureInfos.CollectionChanged += CultureInfosCollectionChanged;
-            }   
+            }
 
             _cultureInfos.AddOrUpdate(culture, name, date);
         }
@@ -368,7 +374,7 @@ namespace Umbraco.Core.Models
         #endregion
 
         #region Validation
-        
+
         /// <inheritdoc />
         public virtual Property[] ValidateProperties(string culture = "*")
         {
@@ -385,7 +391,7 @@ namespace Umbraco.Core.Models
         #region Dirty
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override void ResetDirtyProperties(bool rememberDirty)
         {
             base.ResetDirtyProperties(rememberDirty);
@@ -402,14 +408,14 @@ namespace Umbraco.Core.Models
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override bool IsDirty()
         {
             return IsEntityDirty() || this.IsAnyUserPropertyDirty();
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override bool WasDirty()
         {
             return WasEntityDirty() || this.WasAnyUserPropertyDirty();
@@ -432,7 +438,7 @@ namespace Umbraco.Core.Models
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override bool IsPropertyDirty(string propertyName)
         {
             if (base.IsPropertyDirty(propertyName))
@@ -442,7 +448,7 @@ namespace Umbraco.Core.Models
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override bool WasPropertyDirty(string propertyName)
         {
             if (base.WasPropertyDirty(propertyName))
@@ -452,7 +458,7 @@ namespace Umbraco.Core.Models
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override IEnumerable<string> GetDirtyProperties()
         {
             var instanceProperties = base.GetDirtyProperties();
@@ -461,7 +467,7 @@ namespace Umbraco.Core.Models
         }
 
         /// <inheritdoc />
-        /// <remarks>Overriden to include user properties.</remarks>
+        /// <remarks>Overridden to include user properties.</remarks>
         public override IEnumerable<string> GetWereDirtyProperties()
         {
             var instanceProperties = base.GetWereDirtyProperties();
@@ -473,7 +479,7 @@ namespace Umbraco.Core.Models
 
         /// <inheritdoc />
         /// <remarks>
-        /// Overriden to deal with specific object instances
+        /// Overridden to deal with specific object instances
         /// </remarks>
         protected override void PerformDeepClone(object clone)
         {
@@ -496,7 +502,6 @@ namespace Umbraco.Core.Models
                 clonedContent._properties = (PropertyCollection) _properties.DeepClone(); //manually deep clone
                 clonedContent._properties.CollectionChanged += clonedContent.PropertiesChanged;   //re-assign correct event handler
             }
-            
         }
     }
 }

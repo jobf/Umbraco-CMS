@@ -5,14 +5,13 @@ using System.Net.Http.Formatting;
 using AutoMapper;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.Entities;
 using Umbraco.Web.Models.Trees;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi.Filters;
 using Umbraco.Core.Services;
 using Umbraco.Web.Actions;
 using Umbraco.Web.Models.ContentEditing;
-using Umbraco.Web.Search;
-
 using Constants = Umbraco.Core.Constants;
 
 namespace Umbraco.Web.Trees
@@ -39,8 +38,8 @@ namespace Umbraco.Web.Trees
                        var node = CreateTreeNode(dt, Constants.ObjectTypes.DataType, id, queryStrings, "icon-folder", dt.HasChildren);
                        node.Path = dt.Path;
                        node.NodeType = "container";
-                        //TODO: This isn't the best way to ensure a noop process for clicking a node but it works for now.
-                        node.AdditionalData["jsClickCallback"] = "javascript:void(0);";
+                       // TODO: This isn't the best way to ensure a no operation process for clicking a node but it works for now.
+                       node.AdditionalData["jsClickCallback"] = "javascript:void(0);";
                        return node;
                    }));
 
@@ -90,7 +89,6 @@ namespace Umbraco.Web.Trees
                 Constants.DataTypes.DefaultContentListView,
                 Constants.DataTypes.DefaultMediaListView,
                 Constants.DataTypes.DefaultMembersListView
-
             };
         }
 
@@ -142,10 +140,11 @@ namespace Umbraco.Web.Trees
             return menu;
         }
 
-        public IEnumerable<SearchResultItem> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
+        public IEnumerable<SearchResultEntity> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
         {
-            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.DataType, pageIndex, pageSize, out totalFound, filter: query);
-            return Mapper.Map<IEnumerable<SearchResultItem>>(results);
+            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.DataType, pageIndex, pageSize, out totalFound,
+                filter: SqlContext.Query<IUmbracoEntity>().Where(x => x.Name.Contains(query)));
+            return Mapper.Map<IEnumerable<SearchResultEntity>>(results);
         }
     }
 }

@@ -2,9 +2,9 @@
 using System.Web.Mvc;
 using Umbraco.Web.Routing;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models.PublishedContent;
-using LightInject;
-using Umbraco.Web.Composing;
+using Current = Umbraco.Web.Composing.Current;
 
 namespace Umbraco.Web.Mvc
 {
@@ -73,20 +73,20 @@ namespace Umbraco.Web.Mvc
         /// </summary>
         protected UmbracoContext UmbracoContext => _umbracoContext ?? (_umbracoContext = UmbracoContext.Current);
 
-        // todo - try lazy property injection?
-        private PublishedRouter PublishedRouter => Core.Composing.Current.Container.GetInstance<PublishedRouter>();
+        // TODO: try lazy property injection?
+        private PublishedRouter PublishedRouter => Core.Composing.Current.Factory.GetInstance<PublishedRouter>();
 
         /// <summary>
         /// Exposes an UmbracoHelper
         /// </summary>
         protected UmbracoHelper Umbraco => _helper
-            ?? (_helper = new UmbracoHelper(Current.UmbracoContext, Current.Services, Current.ApplicationCache));
+            ?? (_helper = new UmbracoHelper(Current.UmbracoContext, Current.Services));
 
         public override void OnActionExecuted(ActionExecutedContext filterContext)
         {
             base.OnActionExecuted(filterContext);
 
-            //First we need to check if the pcr has been set, if it has we're going to ignore this and not actually do anything
+            // First we need to check if the published content request has been set, if it has we're going to ignore this and not actually do anything
             if (UmbracoContext.Current.PublishedRequest != null)
             {
                 return;

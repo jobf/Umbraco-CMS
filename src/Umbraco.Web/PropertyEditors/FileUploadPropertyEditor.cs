@@ -15,11 +15,11 @@ namespace Umbraco.Web.PropertyEditors
     [DataEditor(Constants.PropertyEditors.Aliases.UploadField, "File upload", "fileupload", Icon = "icon-download-alt", Group = "media")]
     public class FileUploadPropertyEditor : DataEditor
     {
-        private readonly MediaFileSystem _mediaFileSystem;
+        private readonly IMediaFileSystem _mediaFileSystem;
         private readonly IContentSection _contentSection;
         private readonly UploadAutoFillProperties _uploadAutoFillProperties;
 
-        public FileUploadPropertyEditor(ILogger logger, MediaFileSystem mediaFileSystem, IContentSection contentSection)
+        public FileUploadPropertyEditor(ILogger logger, IMediaFileSystem mediaFileSystem, IContentSection contentSection)
             : base(logger)
         {
             _mediaFileSystem = mediaFileSystem ?? throw new ArgumentNullException(nameof(mediaFileSystem));
@@ -42,7 +42,7 @@ namespace Umbraco.Web.PropertyEditors
         /// Gets a value indicating whether a property is an upload field.
         /// </summary>
         /// <param name="property">The property.</param>
-        /// <returns>A value indicating whether a property is an upload field, and (optionaly) has a non-empty value.</returns>
+        /// <returns>A value indicating whether a property is an upload field, and (optionally) has a non-empty value.</returns>
         private static bool IsUploadField(Property property)
         {
             return property.PropertyType.PropertyEditorAlias == Constants.PropertyEditors.Aliases.UploadField;
@@ -61,7 +61,7 @@ namespace Umbraco.Web.PropertyEditors
         }
 
         /// <summary>
-        /// Look through all propery values stored against the property and resolve any file paths stored
+        /// Look through all property values stored against the property and resolve any file paths stored
         /// </summary>
         /// <param name="prop"></param>
         /// <returns></returns>

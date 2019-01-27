@@ -1,14 +1,12 @@
 ﻿using System.Linq;
 using System.Net.Http.Formatting;
 using Umbraco.Core;
-using Umbraco.Core.Services;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Entities;
 using Umbraco.Web.Actions;
 using Umbraco.Web.Models.Trees;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi.Filters;
-
 using Constants = Umbraco.Core.Constants;
 
 namespace Umbraco.Web.Trees
@@ -64,7 +62,7 @@ namespace Umbraco.Web.Trees
                         var treeNode = CreateTreeNode(entity, Constants.ObjectTypes.DocumentBlueprint, id, queryStrings, "icon-item-arrangement", true);
                         treeNode.Path = $"-1,{entity.Id}";
                         treeNode.NodeType = "document-type-blueprints";
-                        //TODO: This isn't the best way to ensure a noop process for clicking a node but it works for now.
+                        // TODO: This isn't the best way to ensure a no operation process for clicking a node but it works for now.
                         treeNode.AdditionalData["jsClickCallback"] = "javascript:void(0);";
                         return treeNode;
                     }));
@@ -117,6 +115,5 @@ namespace Umbraco.Web.Trees
 
             return menu;
         }
-
     }
 }

@@ -24,6 +24,7 @@ using Umbraco.Web.Security.Providers;
 namespace Umbraco.Tests.Services
 {
     [TestFixture]
+    [Category("Slow")]
     [Apartment(ApartmentState.STA)]
     [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest, PublishedRepositoryEvents = true, WithApplication = true)]
     public class MemberServiceTests : TestWithSomeContentBase
@@ -32,7 +33,7 @@ namespace Umbraco.Tests.Services
         {
             base.SetUp();
 
-            //hack! but we have no choice until we remove the SavePassword method from IMemberService
+            // HACK: but we have no choice until we remove the SavePassword method from IMemberService
             var providerMock = new Mock<MembersMembershipProvider>(ServiceContext.MemberService, ServiceContext.MemberTypeService) { CallBase = true };
             providerMock.Setup(@base => @base.AllowManuallyChangingPassword).Returns(false);
             providerMock.Setup(@base => @base.PasswordFormat).Returns(MembershipPasswordFormat.Hashed);

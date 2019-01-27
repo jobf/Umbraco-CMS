@@ -49,7 +49,8 @@ namespace Umbraco.Web.Editors
         private const string TokenPasswordResetCode = "PasswordResetCode";
         private static readonly string[] TempDataTokenNames = { TokenExternalSignInError, TokenPasswordResetCode };
 
-        public BackOfficeController(ManifestParser manifestParser, UmbracoFeatures features, IRuntimeState runtimeState)
+        public BackOfficeController(ManifestParser manifestParser, UmbracoFeatures features, IGlobalSettings globalSettings, UmbracoContext umbracoContext, ServiceContext services, AppCaches appCaches, ILogger logger, IProfilingLogger profilingLogger, IRuntimeState runtimeState)
+            : base(globalSettings, umbracoContext, services, appCaches, logger, profilingLogger)
         {
             _manifestParser = manifestParser;
             _features = features;
@@ -85,7 +86,7 @@ namespace Umbraco.Web.Editors
                     Core.Constants.Security.BackOfficeAuthenticationType,
                     Core.Constants.Security.BackOfficeExternalAuthenticationType);
             }
-            
+
             if (invite == null)
             {
                 Logger.Warn<BackOfficeController>("VerifyUser endpoint reached with invalid token: NULL");
@@ -175,7 +176,7 @@ namespace Umbraco.Web.Editors
 
             var textForCulture = Services.TextService.GetAllStoredValues(cultureInfo)
                 //the dictionary returned is fine but the delimiter between an 'area' and a 'value' is a '/' but the javascript
-                // in the back office requres the delimiter to be a '_' so we'll just replace it
+                // in the back office requires the delimiter to be a '_' so we'll just replace it
                 .ToDictionary(key => key.Key.Replace("/", "_"), val => val.Value);
 
             return new JsonNetResult { Data = textForCulture, Formatting = Formatting.Indented };
@@ -191,7 +192,7 @@ namespace Umbraco.Web.Editors
         {
             var initJs = new JsInitialization(_manifestParser);
             var initCss = new CssInitialization(_manifestParser);
-            
+
             var files = initJs.OptimizeBackOfficeScriptFiles(HttpContext, JsInitialization.GetDefaultInitialization());
             var result = JsInitialization.GetJavascriptInitialization(HttpContext, files, "umbraco");
             result += initCss.GetStylesheetInitialization(HttpContext);
@@ -220,7 +221,7 @@ namespace Umbraco.Web.Editors
             //cache the result if debugging is disabled
             var result = HttpContext.IsDebuggingEnabled
                 ? GetAssetList()
-                : ApplicationCache.RuntimeCache.GetCacheItem<JArray>(
+                : AppCaches.RuntimeCache.GetCacheItem<JArray>(
                     "Umbraco.Web.Editors.BackOfficeController.GetManifestAssetList",
                     GetAssetList,
                     new TimeSpan(0, 2, 0));
@@ -232,13 +233,7 @@ namespace Umbraco.Web.Editors
         [HttpGet]
         public JsonNetResult GetGridConfig()
         {
-            var gridConfig = UmbracoConfig.For.GridConfig(
-                Logger,
-                ApplicationCache.RuntimeCache,
-                new DirectoryInfo(Server.MapPath(SystemDirectories.AppPlugins)),
-                new DirectoryInfo(Server.MapPath(SystemDirectories.Config)),
-                HttpContext.IsDebuggingEnabled);
-
+            var gridConfig = Current.Configs.Grids();
             return new JsonNetResult { Data = gridConfig.EditorsConfig.Editors, Formatting = Formatting.Indented };
         }
 
@@ -257,7 +252,7 @@ namespace Umbraco.Web.Editors
             //cache the result if debugging is disabled
             var result = HttpContext.IsDebuggingEnabled
                 ? ServerVariablesParser.Parse(serverVars.GetServerVariables())
-                : ApplicationCache.RuntimeCache.GetCacheItem<string>(
+                : AppCaches.RuntimeCache.GetCacheItem<string>(
                     typeof(BackOfficeController) + "ServerVariables",
                     () => ServerVariablesParser.Parse(serverVars.GetServerVariables()),
                     new TimeSpan(0, 10, 0));
@@ -378,9 +373,9 @@ namespace Umbraco.Web.Editors
             ExternalSignInAutoLinkOptions autoLinkOptions = null;
 
             //Here we can check if the provider associated with the request has been configured to allow
-            // new users (auto-linked external accounts). This would never be used with public providers such as 
+            // new users (auto-linked external accounts). This would never be used with public providers such as
             // Google, unless you for some reason wanted anybody to be able to access the backend if they have a Google account
-            // .... not likely! 
+            // .... not likely!
             var authType = OwinContext.Authentication.GetExternalAuthenticationTypes().FirstOrDefault(x => x.AuthenticationType == loginInfo.Login.LoginProvider);
             if (authType == null)
             {
@@ -395,7 +390,7 @@ namespace Umbraco.Web.Editors
             var user = await UserManager.FindAsync(loginInfo.Login);
             if (user != null)
             {
-                //TODO: It might be worth keeping some of the claims associated with the ExternalLoginInfo, in which case we
+                // TODO: It might be worth keeping some of the claims associated with the ExternalLoginInfo, in which case we
                 // wouldn't necessarily sign the user in here with the standard login, instead we'd update the
                 // UseUmbracoBackOfficeExternalCookieAuthentication extension method to have the correct provider and claims factory,
                 // ticket format, etc.. to create our back office user including the claims assigned and in this method we'd just ensure
@@ -421,7 +416,7 @@ namespace Umbraco.Web.Editors
             {
                 if (await AutoLinkAndSignInExternalAccount(loginInfo, autoLinkOptions) == false)
                 {
-                    ViewData[TokenExternalSignInError] = new[] { "The requested provider (" + loginInfo.Login.LoginProvider + ") has not been linked to to an account" };
+                    ViewData[TokenExternalSignInError] = new[] { "The requested provider (" + loginInfo.Login.LoginProvider + ") has not been linked to an account" };
                 }
 
                 //Remove the cookie otherwise this message will keep appearing
@@ -471,7 +466,7 @@ namespace Umbraco.Web.Editors
                     {
                         autoLinkUser.AddRole(userGroup.Alias);
                     }
-                            
+
                     //call the callback if one is assigned
                     if (autoLinkOptions.OnAutoLinking != null)
                     {
@@ -510,7 +505,7 @@ namespace Umbraco.Web.Editors
             }
             return true;
         }
-        
+
         private ActionResult RedirectToLocal(string returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))

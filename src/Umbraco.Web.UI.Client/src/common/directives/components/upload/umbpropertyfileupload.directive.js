@@ -92,7 +92,7 @@
                 vm.culture = null;
             }
 
-            //TODO: need to figure out what we can do for things like Nested Content
+            // TODO: need to figure out what we can do for things like Nested Content
 
             var existingClientFiles = checkPendingClientFiles();
             //create the property to show the list of files currently saved
@@ -222,7 +222,7 @@
                 });
 
                 //special check for a comma in the name
-                newVal += files[i].name.replace(',', '-') + ",";
+                newVal += files[i].name.split(',').join('-') + ",";
 
                 if (isImage) {
 

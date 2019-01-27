@@ -80,7 +80,7 @@ function umbTreeDirective($q, $rootScope, treeService, notificationsService, use
             // entire tree again since we already still have it in memory. Of course if the section is different we will
             // reload it. This saves a lot on processing if someone is navigating in and out of the same section many times
             // since it saves on data retreival and DOM processing.
-            //TODO: This isn't used!?
+            // TODO: This isn't used!?
             var lastSection = "";
             
             /** Helper function to emit tree events */
@@ -92,7 +92,7 @@ function umbTreeDirective($q, $rootScope, treeService, notificationsService, use
                 }
             }
 
-            //TODO: This isn't used!?
+            // TODO: This isn't used!?
             function clearCache(section) {
                 treeService.clearCache({ section: section });
             }
@@ -278,7 +278,7 @@ function umbTreeDirective($q, $rootScope, treeService, notificationsService, use
 
                 if (forceReload || (node.hasChildren && node.children.length === 0)) {
                     //get the children from the tree service
-                    return treeService.loadNodeChildren({ node: node, section: $scope.section })
+                    return treeService.loadNodeChildren({ node: node, section: $scope.section, isDialog: $scope.isdialog })
                         .then(function(data) {
                             //emit expanded event
                             emitEvent("treeNodeExpanded", { tree: $scope.tree, node: node, children: data });
@@ -300,7 +300,7 @@ function umbTreeDirective($q, $rootScope, treeService, notificationsService, use
                     return '';
                 }
 
-                //TODO: This is called constantly because as a method in a template it's re-evaluated pretty much all the time
+                // TODO: This is called constantly because as a method in a template it's re-evaluated pretty much all the time
                 // it would be better if we could cache the processing. The problem is that some of these things are dynamic.
 
                 var css = [];

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Web.Http;
 using AutoMapper;
 using Umbraco.Core;
@@ -28,10 +29,14 @@ namespace Umbraco.Web.Editors
         [HttpGet]
         public IDictionary<string, string> GetAllCultures()
         {
-            return
-                CultureInfo.GetCultures(CultureTypes.AllCultures)
-                    .Where(x => !x.Name.IsNullOrWhiteSpace())
-                    .OrderBy(x => x.DisplayName).ToDictionary(x => x.Name, x => x.DisplayName);
+            // get cultures - new-ing instances to get proper display name,
+            // in the current culture, and not the cached one
+            // (see notes in Language class about culture info names)
+            return CultureInfo.GetCultures(CultureTypes.AllCultures)
+                .Where(x => !x.Name.IsNullOrWhiteSpace())
+                .Select(x => new CultureInfo(x.Name)) // important!
+                .OrderBy(x => x.DisplayName)
+                .ToDictionary(x => x.Name, x => x.DisplayName);
         }
 
         /// <summary>
@@ -95,7 +100,7 @@ namespace Umbraco.Web.Editors
             if (!ModelState.IsValid)
                 throw new HttpResponseException(Request.CreateValidationErrorResponse(ModelState));
 
-            // this is prone to race conds but the service will not let us proceed anyways
+            // this is prone to race conditions but the service will not let us proceed anyways
             var existing = Services.LocalizationService.GetLanguageByIsoCode(language.IsoCode);
 
             if (existing != null && language.Id != existing.Id)
@@ -145,7 +150,7 @@ namespace Umbraco.Web.Editors
             existing.FallbackLanguageId = language.FallbackLanguageId;
 
             // modifying an existing language can create a fallback, verify
-            // note that the service will check again, dealing with race conds
+            // note that the service will check again, dealing with race conditions
             if (existing.FallbackLanguageId.HasValue)
             {
                 var languages = Services.LocalizationService.GetAllLanguages().ToDictionary(x => x.Id, x => x);

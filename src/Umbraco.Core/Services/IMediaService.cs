@@ -10,7 +10,7 @@ using Umbraco.Core.Persistence.Querying;
 
 namespace Umbraco.Core.Services
 {
-    /// <summary>
+        /// <summary>
     /// Defines the Media Service, which is an easy access to operations involving <see cref="IMedia"/>
     /// </summary>
     public interface IMediaService : IContentServiceBase
@@ -109,7 +109,7 @@ namespace Umbraco.Core.Services
             IQuery<IMedia> filter = null, Ordering ordering = null);
 
         /// <summary>
-        /// Gets paged documents of a content content
+        /// Gets paged documents of a content
         /// </summary>
         /// <param name="contentTypeId">The page number.</param>
         /// <param name="pageIndex">The page number.</param>
@@ -151,8 +151,9 @@ namespace Umbraco.Core.Services
         /// <param name="media">The <see cref="IMedia"/> to move</param>
         /// <param name="parentId">Id of the Media's new Parent</param>
         /// <param name="userId">Id of the User moving the Media</param>
-        void Move(IMedia media, int parentId, int userId = 0);
-        
+        /// <returns>True if moving succeeded, otherwise False</returns>
+        Attempt<OperationResult> Move(IMedia media, int parentId, int userId = 0);
+
         /// <summary>
         /// Deletes an <see cref="IMedia"/> object by moving it to the Recycle Bin
         /// </summary>
@@ -178,7 +179,7 @@ namespace Umbraco.Core.Services
         /// </summary>
         /// <remarks>This needs extra care and attention as its potentially a dangerous and extensive operation</remarks>
         /// <param name="mediaTypeIds">Ids of the <see cref="IMediaType"/>s</param>
-        /// <param name="userId">Optional Id of the user issueing the delete operation</param>
+        /// <param name="userId">Optional Id of the user issuing the delete operation</param>
         void DeleteMediaOfTypes(IEnumerable<int> mediaTypeIds, int userId = 0);
         
         /// <summary>

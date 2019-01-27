@@ -4,9 +4,12 @@ angular.module("umbraco")
         function($scope, mediaResource, entityResource, mediaHelper, mediaTypeHelper, eventsService, treeService, localStorageService, localizationService, editorService) {
 
             if (!$scope.model.title) {
-                localizationService.localize("defaultdialogs_selectMedia")
-                    .then(function(data){
-                        $scope.model.title = data;
+                localizationService.localizeMany(["defaultdialogs_selectMedia", "general_includeFromsubFolders"])
+                    .then(function (data) {
+                        $scope.labels = {
+                            title: data[0],
+                            includeSubFolders: data[1]
+                        }
                     });
             }
 
@@ -38,7 +41,7 @@ angular.module("umbraco")
 
             $scope.maxFileSize = umbracoSettings.maxFileSize + "KB";
 
-            $scope.model.selectedImages = [];
+            $scope.model.selection = [];
 
             $scope.acceptedMediatypes = [];
             mediaTypeHelper.getAllowedImagetypes($scope.startNodeId)
@@ -101,7 +104,7 @@ angular.module("umbraco")
             }
 
             $scope.upload = function(v) {
-                angular.element(".umb-file-dropzone-directive .file-select").click();
+                angular.element(".umb-file-dropzone-directive .file-select").trigger("click");
             };
 
             $scope.dragLeave = function(el, event) {
@@ -113,10 +116,10 @@ angular.module("umbraco")
             };
 
             $scope.submitFolder = function() {
-                if ($scope.newFolderName) {
+                if ($scope.model.newFolderName) {
                     $scope.creatingFolder = true;
                     mediaResource
-                        .addFolder($scope.newFolderName, $scope.currentFolder.id)
+                        .addFolder($scope.model.newFolderName, $scope.currentFolder.id)
                         .then(function(data) {
                             //we've added a new folder so lets clear the tree cache for that specific item
                             treeService.clearCache({
@@ -126,7 +129,7 @@ angular.module("umbraco")
                             $scope.creatingFolder = false;
                             $scope.gotoFolder(data);
                             $scope.showFolderInput = false;
-                            $scope.newFolderName = "";
+                            $scope.model.newFolderName = "";
                         });
                 } else {
                     $scope.showFolderInput = false;
@@ -142,7 +145,7 @@ angular.module("umbraco")
 
             $scope.gotoFolder = function(folder) {
                 if (!$scope.multiPicker) {
-                    deselectAllImages($scope.model.selectedImages);
+                    deselectAllImages($scope.model.selection);
                 }
 
                 if (!folder) {
@@ -209,19 +212,19 @@ angular.module("umbraco")
 
             function selectImage(image) {
                 if (image.selected) {
-                    for (var i = 0; $scope.model.selectedImages.length > i; i++) {
-                        var imageInSelection = $scope.model.selectedImages[i];
+                    for (var i = 0; $scope.model.selection.length > i; i++) {
+                        var imageInSelection = $scope.model.selection[i];
                         if (image.key === imageInSelection.key) {
                             image.selected = false;
-                            $scope.model.selectedImages.splice(i, 1);
+                            $scope.model.selection.splice(i, 1);
                         }
                     }
                 } else {
                     if (!$scope.multiPicker) {
-                        deselectAllImages($scope.model.selectedImages);
+                        deselectAllImages($scope.model.selection);
                     }
                     image.selected = true;
-                    $scope.model.selectedImages.push(image);
+                    $scope.model.selection.push(image);
                 }
             }
 
@@ -235,7 +238,7 @@ angular.module("umbraco")
 
             $scope.onUploadComplete = function(files) {
                 $scope.gotoFolder($scope.currentFolder).then(function() {
-                    if (files.length === 1 && $scope.model.selectedImages.length === 0) {
+                    if (files.length === 1 && $scope.model.selection.length === 0) {
                         var image = $scope.images[$scope.images.length - 1];
                         $scope.target = image;
                         $scope.target.url = mediaHelper.resolveFile(image);
@@ -272,7 +275,7 @@ angular.module("umbraco")
                 $scope.mediaPickerDetailsOverlay.show = true;
 
                 $scope.mediaPickerDetailsOverlay.submit = function(model) {
-                    $scope.model.selectedImages.push($scope.target);
+                    $scope.model.selection.push($scope.target);
                     $scope.model.submit($scope.model);
 
                     $scope.mediaPickerDetailsOverlay.show = false;
@@ -308,21 +311,9 @@ angular.module("umbraco")
                 debounceSearchMedia();
             };
 
-            /**
-                * Toggle the $scope.model.allowAsRoot value to either true or false
-             */
-            $scope.toggle = function(){
-
+            $scope.toggle = function() {
                 // Make sure to activate the changeSearch function everytime the toggle is clicked
                 $scope.changeSearch();
-
-                // Toggle the showChilds option
-                if($scope.showChilds){
-                    $scope.showChilds = false;
-                    return;
-                }
-
-                $scope.showChilds = true;
             }
 
             $scope.changePagination = function(pageNumber) {
@@ -393,11 +384,11 @@ angular.module("umbraco")
                     var folderImage = $scope.images[folderImageIndex];
                     var imageIsSelected = false;
 
-                    if ($scope.model && angular.isArray($scope.model.selectedImages)) {
+                    if ($scope.model && angular.isArray($scope.model.selection)) {
                         for (var selectedImageIndex = 0;
-                            selectedImageIndex < $scope.model.selectedImages.length;
+                            selectedImageIndex < $scope.model.selection.length;
                             selectedImageIndex++) {
-                            var selectedImage = $scope.model.selectedImages[selectedImageIndex];
+                            var selectedImage = $scope.model.selection[selectedImageIndex];
 
                             if (folderImage.key === selectedImage.key) {
                                 imageIsSelected = true;

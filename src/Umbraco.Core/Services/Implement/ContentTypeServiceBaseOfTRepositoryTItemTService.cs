@@ -13,7 +13,7 @@ using Umbraco.Core.Services.Changes;
 
 namespace Umbraco.Core.Services.Implement
 {
-    internal abstract class ContentTypeServiceBase<TRepository, TItem, TService> : ContentTypeServiceBase<TItem, TService>, IContentTypeServiceBase<TItem>
+    public abstract class ContentTypeServiceBase<TRepository, TItem, TService> : ContentTypeServiceBase<TItem, TService>, IContentTypeServiceBase<TItem>
         where TRepository : IContentTypeRepositoryBase<TItem>
         where TItem : class, IContentTypeComposition
         where TService : class, IContentTypeServiceBase<TItem>
@@ -125,7 +125,7 @@ namespace Umbraco.Core.Services.Implement
 
             // note
             // this is meant to run *after* uow.Commit() so must use WasPropertyDirty() everywhere
-            // instead of IsPropertyDirty() since dirty properties have been resetted already
+            // instead of IsPropertyDirty() since dirty properties have been reset already
 
             var changes = new List<ContentTypeChange<TItem>>();
 
@@ -134,7 +134,7 @@ namespace Umbraco.Core.Services.Implement
                 var dirty = (IRememberBeingDirty)contentType;
 
                 // skip new content types
-                //TODO: This used to be WasPropertyDirty("HasIdentity") but i don't think that actually worked for detecting new entities this does seem to work properly
+                // TODO: This used to be WasPropertyDirty("HasIdentity") but i don't think that actually worked for detecting new entities this does seem to work properly
                 var isNewContentType = dirty.WasPropertyDirty("Id");
                 if (isNewContentType)
                 {
@@ -152,7 +152,7 @@ namespace Umbraco.Core.Services.Implement
                         throw new Exception("oops");
 
                     // skip new properties
-                    //TODO: This used to be WasPropertyDirty("HasIdentity") but i don't think that actually worked for detecting new entities this does seem to work properly
+                    // TODO: This used to be WasPropertyDirty("HasIdentity") but i don't think that actually worked for detecting new entities this does seem to work properly
                     var isNewProperty = dirtyProperty.WasPropertyDirty("Id");
                     if (isNewProperty) return false;
 
@@ -353,7 +353,7 @@ namespace Umbraco.Core.Services.Implement
         public IEnumerable<TItem> GetComposedOf(int id)
         {
             // GetAll is cheap, repository has a full dataset cache policy
-            // fixme - still, because it uses the cache, race conditions!
+            // TODO: still, because it uses the cache, race conditions!
             var allContentTypes = GetAll(Array.Empty<int>());
             return GetComposedOf(id, allContentTypes);
         }
@@ -739,7 +739,7 @@ namespace Umbraco.Core.Services.Implement
 
                 try
                 {
-                    var container = new EntityContainer(Constants.ObjectTypes.DocumentType)
+                    var container = new EntityContainer(ContainedObjectType)
                     {
                         Name = name,
                         ParentId = parentId,
@@ -758,7 +758,7 @@ namespace Umbraco.Core.Services.Implement
 
                     saveEventArgs.CanCancel = false;
                     OnSavedContainer(scope, saveEventArgs);
-                    //TODO: Audit trail ?
+                    // TODO: Audit trail ?
 
                     return OperationResult.Attempt.Succeed(evtMsgs, container);
                 }
@@ -805,7 +805,7 @@ namespace Umbraco.Core.Services.Implement
                 OnSavedContainer(scope, args);
             }
 
-            //TODO: Audit trail ?
+            // TODO: Audit trail ?
 
             return OperationResult.Attempt.Succeed(evtMsgs);
         }
@@ -897,7 +897,7 @@ namespace Umbraco.Core.Services.Implement
                 OnDeletedContainer(scope, deleteEventArgs);
 
                 return OperationResult.Attempt.Succeed(evtMsgs);
-                //TODO: Audit trail ?
+                // TODO: Audit trail ?
             }
         }
 

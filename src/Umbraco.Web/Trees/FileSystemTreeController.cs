@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Formatting;
 using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.IO;
-using Umbraco.Core.Services;
 using Umbraco.Web.Actions;
 using Umbraco.Web.Models.Trees;
 
@@ -30,7 +28,10 @@ namespace Umbraco.Web.Trees
         /// Inheritors can override this method to modify the folder node that is created.
         /// </summary>
         /// <param name="treeNode"></param>
-        protected virtual void OnRenderFolderNode(ref TreeNode treeNode) { }
+        protected virtual void OnRenderFolderNode(ref TreeNode treeNode) {
+            // TODO: This isn't the best way to ensure a noop process for clicking a node but it works for now.
+            treeNode.AdditionalData["jsClickCallback"] = "javascript:void(0);";
+        }
 
         protected override TreeNodeCollection GetTreeNodes(string id, FormDataCollection queryStrings)
         {
@@ -57,6 +58,10 @@ namespace Umbraco.Web.Trees
             var files = FileSystem.GetFiles(path).Where(x =>
             {
                 var extension = Path.GetExtension(x);
+
+                if (Extensions.Contains("*"))
+                    return true;
+                
                 return extension != null && Extensions.Contains(extension.Trim('.'), StringComparer.InvariantCultureIgnoreCase);
             });
 

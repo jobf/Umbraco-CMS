@@ -48,7 +48,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
             var cache = GetCurrentSnapshotCache();
             return cache == null
                 ? GetProfileNameByIdNoCache(id)
-                : (string)cache.GetCacheItem(CacheKeys.ProfileName(id), () => GetProfileNameByIdNoCache(id));
+                : (string)cache.Get(CacheKeys.ProfileName(id), () => GetProfileNameByIdNoCache(id));
         }
 
         private static string GetProfileNameByIdNoCache(int id)
@@ -215,7 +215,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
         public override string Path => _contentNode.Path;
 
         /// <inheritdoc />
-        public override int TemplateId => _contentData.TemplateId;
+        public override int? TemplateId => _contentData.TemplateId;
 
         /// <inheritdoc />
         public override int CreatorId => _contentNode.CreatorId;
@@ -274,7 +274,41 @@ namespace Umbraco.Web.PublishedCache.NuCache
         public override PublishedItemType ItemType => _contentNode.ContentType.ItemType;
 
         /// <inheritdoc />
-        public override bool IsDraft => _contentData.Published == false;
+        public override bool IsDraft(string culture = null)
+        {
+            // if this is the 'published' published content, nothing can be draft
+            if (_contentData.Published)
+                return false;
+
+            // not the 'published' published content, and does not vary = must be draft
+            if (!ContentType.VariesByCulture())
+                return true;
+
+            // handle context culture
+            if (culture == null)
+                culture = VariationContextAccessor?.VariationContext?.Culture ?? "";
+
+            // not the 'published' published content, and varies
+            // = depends on the culture
+            return _contentData.CultureInfos.TryGetValue(culture, out var cvar) && cvar.IsDraft;
+        }
+
+        public override bool IsPublished(string culture = null)
+        {
+            if (!ContentType.VariesByCulture())
+            {
+                return _contentData.Published;
+            }
+
+            // handle context culture
+            if (culture == null)
+            {
+                culture = VariationContextAccessor?.VariationContext?.Culture ?? "";
+            }
+
+            //If the current culture is not a draft, it must be the published version
+            return _contentData.CultureInfos.TryGetValue(culture, out var cvar) && !cvar.IsDraft;
+        }
 
         #endregion
 
@@ -309,7 +343,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
                     return GetChildren();
 
                 // note: ToArray is important here, we want to cache the result, not the function!
-                return (IEnumerable<IPublishedContent>)cache.GetCacheItem(ChildrenCacheKey, () => GetChildren().ToArray());
+                return (IEnumerable<IPublishedContent>)cache.Get(ChildrenCacheKey, () => GetChildren().ToArray());
             }
         }
 
@@ -336,7 +370,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
 
             // notes:
             // _contentNode.ChildContentIds is an unordered int[]
-            // need needs to fetch & sort - do it only once, lazyily, though
+            // needs to fetch & sort - do it only once, lazily, though
             // Q: perfs-wise, is it better than having the store managed an ordered list
         }
 
@@ -364,7 +398,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
         #region Caching
 
         // beware what you use that one for - you don't want to cache its result
-        private ICacheProvider GetAppropriateCache()
+        private IAppCache GetAppropriateCache()
         {
             var publishedSnapshot = (PublishedSnapshot)_publishedSnapshotAccessor.PublishedSnapshot;
             var cache = publishedSnapshot == null
@@ -375,7 +409,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
             return cache;
         }
 
-        private ICacheProvider GetCurrentSnapshotCache()
+        private IAppCache GetCurrentSnapshotCache()
         {
             var publishedSnapshot = (PublishedSnapshot)_publishedSnapshotAccessor.PublishedSnapshot;
             return publishedSnapshot?.SnapshotCache;
@@ -410,14 +444,14 @@ namespace Umbraco.Web.PublishedCache.NuCache
         private string AsPreviewingCacheKey => _asPreviewingCacheKey ?? (_asPreviewingCacheKey = CacheKeys.PublishedContentAsPreviewing(Key));
 
         // used by ContentCache
-        internal IPublishedContent AsPreviewingModel()
+        internal IPublishedContent AsDraft()
         {
             if (IsPreviewing)
                 return this;
 
             var cache = GetAppropriateCache();
             if (cache == null) return new PublishedContent(this).CreateModel();
-            return (IPublishedContent)cache.GetCacheItem(AsPreviewingCacheKey, () => new PublishedContent(this).CreateModel());
+            return (IPublishedContent)cache.Get(AsPreviewingCacheKey, () => new PublishedContent(this).CreateModel());
         }
 
         // used by Navigable.Source,...

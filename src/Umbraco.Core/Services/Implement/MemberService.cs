@@ -28,14 +28,14 @@ namespace Umbraco.Core.Services.Implement
         private readonly IAuditRepository _auditRepository;
 
         private readonly IMemberGroupService _memberGroupService;
-        private readonly MediaFileSystem _mediaFileSystem;
+        private readonly IMediaFileSystem _mediaFileSystem;
 
         //only for unit tests!
         internal MembershipProviderBase MembershipProvider { get; set; }
 
         #region Constructor
 
-        public MemberService(IScopeProvider provider, ILogger logger, IEventMessagesFactory eventMessagesFactory, IMemberGroupService memberGroupService,  MediaFileSystem mediaFileSystem,
+        public MemberService(IScopeProvider provider, ILogger logger, IEventMessagesFactory eventMessagesFactory, IMemberGroupService memberGroupService,  IMediaFileSystem mediaFileSystem,
             IMemberRepository memberRepository, IMemberTypeRepository memberTypeRepository, IMemberGroupRepository memberGroupRepository, IAuditRepository auditRepository)
             : base(provider, logger, eventMessagesFactory)
         {
@@ -391,8 +391,6 @@ namespace Umbraco.Core.Services.Implement
             }
         }
 
-        // fixme get rid of string filter?
-
         public IEnumerable<IMember> GetAll(long pageIndex, int pageSize, out long totalRecords,
             string orderBy, Direction orderDirection, string memberTypeAlias = null, string filter = "")
         {
@@ -451,7 +449,7 @@ namespace Umbraco.Core.Services.Implement
         /// <returns><see cref="IMember"/></returns>
         public IMember GetByUsername(string username)
         {
-            //TODO: Somewhere in here, whether at this level or the repository level, we need to add
+            // TODO: Somewhere in here, whether at this level or the repository level, we need to add
             // a caching mechanism since this method is used by all the membership providers and could be
             // called quite a bit when dealing with members.
 
@@ -772,8 +770,8 @@ namespace Umbraco.Core.Services.Implement
                         throw new ArgumentOutOfRangeException(nameof(matchType)); // causes rollback // causes rollback
                 }
 
-                //TODO: Since this is by property value, we need a GetByPropertyQuery on the repo!
-                //TODO: Since this is by property value, we need a GetByPropertyQuery on the repo!
+                // TODO: Since this is by property value, we need a GetByPropertyQuery on the repo!
+                // TODO: Since this is by property value, we need a GetByPropertyQuery on the repo!
                 return _memberRepository.Get(query);
             }
         }
@@ -929,10 +927,7 @@ namespace Umbraco.Core.Services.Implement
                 args.CanCancel = false;
             scope.Events.Dispatch(Deleted, this, args);
 
-            // fixme - this is MOOT because the event will not trigger immediately
-            // it's been refactored already (think it's the dispatcher that deals with it?)
-            _mediaFileSystem.DeleteFiles(args.MediaFilesToDelete, // remove flagged files
-                (file, e) => Logger.Error<MemberService>(e, "An error occurred while deleting file attached to nodes: {File}", file));
+            // media files deleted by QueuingEventDispatcher
         }
 
         #endregion
@@ -1033,7 +1028,7 @@ namespace Umbraco.Core.Services.Implement
                 scope.WriteLock(Constants.Locks.MemberTree);
                 var ids = _memberGroupRepository.GetMemberIds(usernames);
                 _memberGroupRepository.AssignRoles(ids, roleNames);
-                scope.Events.Dispatch(AssignedRoles, this, new RolesEventArgs(ids, roleNames));
+                scope.Events.Dispatch(AssignedRoles, this, new RolesEventArgs(ids, roleNames), nameof(AssignedRoles));
                 scope.Complete();
             }
         }
@@ -1050,7 +1045,7 @@ namespace Umbraco.Core.Services.Implement
                 scope.WriteLock(Constants.Locks.MemberTree);
                 var ids = _memberGroupRepository.GetMemberIds(usernames);
                 _memberGroupRepository.DissociateRoles(ids, roleNames);
-                scope.Events.Dispatch(RemovedRoles, this, new RolesEventArgs(ids, roleNames));
+                scope.Events.Dispatch(RemovedRoles, this, new RolesEventArgs(ids, roleNames), nameof(RemovedRoles));
                 scope.Complete();
             }
         }
@@ -1066,7 +1061,7 @@ namespace Umbraco.Core.Services.Implement
             {
                 scope.WriteLock(Constants.Locks.MemberTree);
                 _memberGroupRepository.AssignRoles(memberIds, roleNames);
-                scope.Events.Dispatch(AssignedRoles, this, new RolesEventArgs(memberIds, roleNames));
+                scope.Events.Dispatch(AssignedRoles, this, new RolesEventArgs(memberIds, roleNames), nameof(AssignedRoles));
                 scope.Complete();
             }
         }
@@ -1082,7 +1077,7 @@ namespace Umbraco.Core.Services.Implement
             {
                 scope.WriteLock(Constants.Locks.MemberTree);
                 _memberGroupRepository.DissociateRoles(memberIds, roleNames);
-                scope.Events.Dispatch(RemovedRoles, this, new RolesEventArgs(memberIds, roleNames));
+                scope.Events.Dispatch(RemovedRoles, this, new RolesEventArgs(memberIds, roleNames), nameof(RemovedRoles));
                 scope.Complete();
             }
         }
@@ -1309,7 +1304,7 @@ namespace Umbraco.Core.Services.Implement
                     Id = property.Id,
                     Alias = property.Alias,
                     Name = property.PropertyType.Name,
-                    Value = property.GetValue(), // fixme ignoring variants
+                    Value = property.GetValue(), // TODO: ignoring variants
                     CreateDate = property.CreateDate,
                     UpdateDate = property.UpdateDate
                 };
@@ -1335,8 +1330,8 @@ namespace Umbraco.Core.Services.Implement
             {
                 scope.WriteLock(Constants.Locks.MemberTree);
 
-                //TODO: What about content that has the contenttype as part of its composition?
-                //TODO: What about content that has the contenttype as part of its composition?
+                // TODO: What about content that has the contenttype as part of its composition?
+                // TODO: What about content that has the contenttype as part of its composition?
                 var query = Query<IMember>().Where(x => x.ContentTypeId == memberTypeId);
 
                 var members = _memberRepository.Get(query).ToArray();
@@ -1382,7 +1377,6 @@ namespace Umbraco.Core.Services.Implement
             }
         }
 
-        // fixme - this should not be here, or???
         public string GetDefaultMemberType()
         {
             return Current.Services.MemberTypeService.GetDefault();

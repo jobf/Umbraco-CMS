@@ -208,11 +208,18 @@ namespace Umbraco.Web.Trees
             }
             else
             {
-                result = Services.EntityService.GetChildren(entityId, UmbracoObjectType).ToArray();
+                result = GetChildrenFromEntityService(entityId).ToArray();
             }
 
             return result;
         }
+
+        /// <summary>
+        /// Abstract method to fetch the entities from the entity service
+        /// </summary>
+        /// <param name="entityId"></param>
+        /// <returns></returns>
+        internal abstract IEnumerable<IEntitySlim> GetChildrenFromEntityService(int entityId);
 
         /// <summary>
         /// Returns true or false if the current user has access to the node based on the user's allowed start node (path) access
@@ -232,7 +239,9 @@ namespace Umbraco.Web.Trees
         protected bool HasPathAccess(IUmbracoEntity entity, FormDataCollection queryStrings)
         {
             if (entity == null) return false;
-            return Security.CurrentUser.HasPathAccess(entity, Services.EntityService, RecycleBinId);
+            return RecycleBinId == Constants.System.RecycleBinContent
+                ? Security.CurrentUser.HasContentPathAccess(entity, Services.EntityService)
+                : Security.CurrentUser.HasMediaPathAccess(entity, Services.EntityService);
         }
 
         /// <summary>
@@ -348,13 +357,26 @@ namespace Umbraco.Web.Trees
         {
             if (RecycleBinId.ToInvariantString() == id)
             {
-                var menu = new MenuItemCollection();
-                menu.Items.Add(new MenuItem("emptyRecycleBin", Services.TextService)
+                // get the default assigned permissions for this user
+                var deleteAllowed = false;
+                var deleteAction = Current.Actions.FirstOrDefault(y => y.Letter == ActionDelete.ActionLetter);
+                if (deleteAction != null)
                 {
-                    Icon = "trash",
-                    OpensDialog = true
-                });
-                menu.Items.Add(new RefreshNode(Services.TextService, true));
+                    var perms = Security.CurrentUser.GetPermissions(Constants.System.RecycleBinContentString, Services.UserService);
+                    deleteAllowed = perms.FirstOrDefault(x => x.Contains(deleteAction.Letter)) != null;
+                }
+
+                var menu = new MenuItemCollection();
+                // only add empty recycle bin if the current user is allowed to delete by default 
+                if (deleteAllowed)
+                {
+	                menu.Items.Add(new MenuItem("emptyRecycleBin", Services.TextService)
+	                {
+	                    Icon = "trash",
+	                    OpensDialog = true
+	                });
+	                menu.Items.Add(new RefreshNode(Services.TextService, true));
+				}
                 return menu;
             }
 
@@ -381,13 +403,18 @@ namespace Umbraco.Web.Trees
             foreach (var m in notAllowed)
             {
                 menuWithAllItems.Items.Remove(m);
+                // if the disallowed action is set as default action, make sure to reset the default action as well
+                if (menuWithAllItems.DefaultMenuAlias == m.Alias)
+                {
+                    menuWithAllItems.DefaultMenuAlias = null;
+                }
             }
         }
 
         internal IEnumerable<MenuItem> GetAllowedUserMenuItemsForNode(IUmbracoEntity dd)
         {
             var permission = Services.UserService.GetPermissions(Security.CurrentUser, dd.Path);
-            //fixme: inject
+            // TODO: inject
             var actions = Current.Actions.FromEntityPermission(permission)
                 .ToList();
 
@@ -402,7 +429,7 @@ namespace Umbraco.Web.Trees
         }
 
         /// <summary>
-        /// Determins if the user has access to view the node/document
+        /// Determines if the user has access to view the node/document
         /// </summary>
         /// <param name="doc">The Document to check permissions against</param>
         /// <param name="allowedUserOptions">A list of MenuItems that the user has permissions to execute on the current document</param>
@@ -410,7 +437,7 @@ namespace Umbraco.Web.Trees
         /// <returns></returns>
         internal bool CanUserAccessNode(IUmbracoEntity doc, IEnumerable<MenuItem> allowedUserOptions, string culture)
         {
-            //TODO: At some stage when we implement permissions on languages we'll need to take care of culture
+            // TODO: At some stage when we implement permissions on languages we'll need to take care of culture
             return allowedUserOptions.Select(x => x.Action).OfType<ActionBrowse>().Any();
         }
 

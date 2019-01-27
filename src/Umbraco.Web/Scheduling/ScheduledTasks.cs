@@ -11,7 +11,7 @@ using Umbraco.Core.Sync;
 
 namespace Umbraco.Web.Scheduling
 {
-    //TODO: No scheduled task (i.e. URL) would be secured, so if people are actually using these each task
+    // TODO: No scheduled task (i.e. URL) would be secured, so if people are actually using these each task
     // would need to be a publicly available task (URL) which isn't really very good :(
     // We should really be using the AdminTokenAuthorizeAttribute for this stuff
 
@@ -20,18 +20,16 @@ namespace Umbraco.Web.Scheduling
         private static HttpClient _httpClient;
         private readonly IRuntimeState _runtime;
         private readonly IUmbracoSettingsSection _settings;
-        private readonly ILogger _logger;
-        private readonly ProfilingLogger _proflog;
+        private readonly IProfilingLogger _logger;
         private static readonly Hashtable ScheduledTaskTimes = new Hashtable();
 
         public ScheduledTasks(IBackgroundTaskRunner<RecurringTaskBase> runner, int delayMilliseconds, int periodMilliseconds,
-            IRuntimeState runtime, IUmbracoSettingsSection settings, ILogger logger, ProfilingLogger proflog)
+            IRuntimeState runtime, IUmbracoSettingsSection settings, IProfilingLogger logger)
             : base(runner, delayMilliseconds, periodMilliseconds)
         {
             _runtime = runtime;
             _settings = settings;
             _logger = logger;
-            _proflog = proflog;
         }
 
         private async Task ProcessTasksAsync(CancellationToken token)
@@ -46,7 +44,7 @@ namespace Umbraco.Web.Scheduling
                     ScheduledTaskTimes.Add(t.Alias, DateTime.Now);
                 }
 
-                // Add 1 second to timespan to compensate for differencies in timer
+                // Add 1 second to timespan to compensate for differences in timer
                 else if (
                     new TimeSpan(
                         DateTime.Now.Ticks - ((DateTime)ScheduledTaskTimes[t.Alias]).Ticks).TotalSeconds + 1 >= t.Interval)
@@ -71,10 +69,10 @@ namespace Umbraco.Web.Scheduling
                 {
                     BaseAddress = _runtime.ApplicationUrl
                 };
-            
+
             var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-            //TODO: pass custom the authorization header, currently these aren't really secured!
+            // TODO: pass custom the authorization header, currently these aren't really secured!
             //request.Headers.Authorization = AdminTokenAuthorizeAttribute.GetAuthenticationHeaderValue(_appContext);
 
             try
@@ -109,7 +107,7 @@ namespace Umbraco.Web.Scheduling
                 return false; // do NOT repeat, going down
             }
 
-            using (_proflog.DebugDuration<ScheduledTasks>("Scheduled tasks executing", "Scheduled tasks complete"))
+            using (_logger.DebugDuration<ScheduledTasks>("Scheduled tasks executing", "Scheduled tasks complete"))
             {
                 try
                 {

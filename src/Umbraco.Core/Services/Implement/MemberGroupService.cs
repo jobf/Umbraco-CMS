@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -22,23 +23,10 @@ namespace Umbraco.Core.Services.Implement
             MemberGroupRepository.SavingMemberGroup += MemberGroupRepository_SavingMemberGroup;
         }
 
-        #region Proxied event handlers
+        #region Proxy event handlers
 
         void MemberGroupRepository_SavingMemberGroup(IMemberGroupRepository sender, SaveEventArgs<IMemberGroup> e)
         {
-            // fixme - wtf?
-            // why is the repository triggering these events?
-            // and, the events are *dispatched* by the repository so it makes no sense dispatching them again!
-
-            // v7.6
-            //using (var scope = UowProvider.ScopeProvider.CreateScope())
-            //{
-            //    scope.Complete(); // always
-            //    if (scope.Events.DispatchCancelable(Saving, this, new SaveEventArgs<IMemberGroup>(e.SavedEntities)))
-            //        e.Cancel = true;
-            //}
-
-            // v8
             if (Saving.IsRaisedEventCancelled(new SaveEventArgs<IMemberGroup>(e.SavedEntities), this))
                 e.Cancel = true;
         }
@@ -57,6 +45,19 @@ namespace Umbraco.Core.Services.Implement
             using (var scope = ScopeProvider.CreateScope(autoComplete: true))
             {
                 return _memberGroupRepository.GetMany();
+            }
+        }
+
+        public IEnumerable<IMemberGroup> GetByIds(IEnumerable<int> ids)
+        {
+            if (ids == null || ids.Any() == false)
+            {
+                return new IMemberGroup[0];
+            }
+
+            using (var scope = ScopeProvider.CreateScope(autoComplete: true))
+            {
+                return _memberGroupRepository.GetMany(ids.ToArray());
             }
         }
 

@@ -11,7 +11,7 @@
 
 * Open the `/src/umbraco.sln` Visual Studio solution
 * Start the solution (easiest way is to use `ctrl + F5`)
-* When the solution is first built this may take some time since it will restore all nuget, npm and bower packages, build the .net solution and also build the angular solution
+* When the solution is first built this may take some time since it will restore all nuget and npm packages, build the .net solution and also build the angular solution
 * When the website starts you'll see the Umbraco installer and just follow the prompts
 * You're all set!
 
@@ -33,5 +33,5 @@ We recommend running the site with the Visual Studio since you'll be able to rem
 
 We are keeping track of [known issues and limitations here](http://issues.umbraco.org/issue/U4-11279). These line items will eventually be turned into actual tasks to be worked on. Feel free to help us keep this list updated if you find issues and even help fix some of these items. If there is a particular item you'd like to help fix please mention this on the task and we'll create a sub task for the item to continue discussion there.
 
-There's [a list of tasks for v8 that haven't been completed](https://issues.umbraco.org/issues?q=&project=U4&tagValue=&release=8.0.0&issueType=&resolvedState=open&search=search). If you are interested in helping out with any of these please mention this on the task. This list will be constantly updated as we begin to document and design some of the other tasks that still need to get done.
+There's [a list of tasks for v8 that haven't been completed](https://github.com/umbraco/Umbraco-CMS/labels/release%2F8.0.0). If you are interested in helping out with any of these please mention this on the task. This list will be constantly updated as we begin to document and design some of the other tasks that still need to get done.
 

@@ -14,7 +14,7 @@
     <key alias="createPackage">创建扩展包</key>
     <key alias="delete">删除</key>
     <key alias="disable">禁用</key>
-    <key alias="emptyTrashcan">清空回收站</key>
+    <key alias="emptyRecycleBin">清空回收站</key>
     <key alias="exportDocumentType">导出文档类型</key>
     <key alias="importDocumentType">导入文档类型</key>
     <key alias="importPackage">导入扩展包</key>
@@ -237,7 +237,6 @@
     <key alias="closeThisWindow">关闭窗口</key>
     <key alias="confirmdelete">您确定要删除吗</key>
     <key alias="confirmdisable">您确定要禁用吗</key>
-    <key alias="confirmEmptyTrashcan">单击此框确定删除%0%项</key>
     <key alias="confirmlogout">您确定吗?</key>
     <key alias="confirmSure">您确定吗？</key>
     <key alias="cut">剪切</key>
@@ -271,10 +270,6 @@
     <key alias="siterepublishHelp">网站缓存将会刷新，所有已发布的内容将会更新。</key>
     <key alias="tableColumns">表格列数</key>
     <key alias="tableRows">表格行数</key>
-    <key alias="templateContentAreaHelp"><![CDATA[<strong>设置一个占位符id</strong> 您可以在子模板中通过该ID来插入内容，
-       引用格式： <code>&lt;asp:content /&gt;</code>。]]></key>
-    <key alias="templateContentPlaceHolderHelp"><![CDATA[从下面的列表中<strong>选择一个
-      占位符id</strong>。]]></key>
     <key alias="thumbnailimageclickfororiginal">点击图片查看完整大小</key>
     <key alias="treepicker">拾取项</key>
     <key alias="viewCacheItem">查看缓存项</key>
@@ -446,7 +441,6 @@
     <key alias="or">或</key>
     <key alias="password">密码</key>
     <key alias="path">路径</key>
-    <key alias="placeHolderID">占位符ID</key>
     <key alias="pleasewait">请稍候…</key>
     <key alias="previous">上一步</key>
     <key alias="properties">属性</key>
@@ -729,14 +723,12 @@
       选择 ".umb" 或者 ".zip" 文件
     ]]></key>
     <key alias="packageAuthor">作者</key>
-    <key alias="packageDemonstration">演示</key>
     <key alias="packageDocumentation">文档</key>
     <key alias="packageMetaData">元数据</key>
     <key alias="packageName">名称</key>
     <key alias="packageNoItemsHeader">扩展包不含任何项</key>
     <key alias="packageNoItemsText"><![CDATA[该扩展包不包含任何项<br/><br/>
       点击下面的“卸载”，您可以安全的删除。]]></key>
-    <key alias="packageNoUpgrades">无可用更新</key>
     <key alias="packageOptions">选项</key>
     <key alias="packageReadme">说明</key>
     <key alias="packageRepository">程序库</key>
@@ -747,13 +739,7 @@
     <key alias="packageUninstallText"><![CDATA[选择想要卸载的项目，点击“卸载”<br />
       <span style="color: Red; font-weight: bold;">注意：</span>
       卸载包将导致所有依赖该包的东西失效，请确认。    ]]></key>
-    <key alias="packageUpgradeDownload">从程序库下载更新</key>
-    <key alias="packageUpgradeHeader">更新扩展包</key>
-    <key alias="packageUpgradeInstructions">更新说明</key>
-    <key alias="packageUpgradeText">此软件包有一个可用的升级。您可以直接从 Umbraco 软件包存储库下载。</key>
     <key alias="packageVersion">版本</key>
-    <key alias="packageVersionHistory">版本历史</key>
-    <key alias="viewPackageWebsite">访问扩展包网站</key>
     <key alias="packageAlreadyInstalled">已安装软件包</key>
     <key alias="targetVersionMismatch">此软件包无法安装, 它需要一个最小的 Umbraco 版本的%0%</key>
     <key alias="installStateUninstalling">卸载中...</key>
@@ -1221,9 +1207,6 @@
     <key alias="configurationServiceFileNotFound">File does not exist: '%0%'.</key>
     <key alias="configurationServiceNodeNotFound"><![CDATA[Unable to find <strong>'%0%'</strong> in config file <strong>'%1%'</strong>.]]></key>
     <key alias="configurationServiceError">There was an error, check log for full error: %0%.</key>
-    <key alias="xmlDataIntegrityCheckMembers">Members - Total XML: %0%, Total: %1%, Total invalid: %2%</key>
-    <key alias="xmlDataIntegrityCheckMedia">Media - Total XML: %0%, Total: %1%, Total invalid: %2%</key>
-    <key alias="xmlDataIntegrityCheckContent">Content - Total XML: %0%, Total published: %1%, Total invalid: %2%</key>
     <key alias="httpsCheckValidCertificate">Your site certificate was marked as valid.</key>
     <key alias="httpsCheckInvalidCertificate">Certificate validation error: '%0%'</key>
     <key alias="httpsCheckInvalidUrl">Error pinging the URL %0% - '%1%'</key>

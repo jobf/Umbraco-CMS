@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -138,6 +137,24 @@ namespace Umbraco.Core.Services.Implement
             using (var scope = ScopeProvider.CreateScope(autoComplete: true))
             {
                 return _stylesheetRepository.ValidateStylesheet(stylesheet);
+            }
+        }
+
+        public void CreateStyleSheetFolder(string folderPath)
+        {
+            using (var scope = ScopeProvider.CreateScope())
+            {
+                ((StylesheetRepository) _stylesheetRepository).AddFolder(folderPath);
+                scope.Complete();
+            }
+        }
+
+        public void DeleteStyleSheetFolder(string folderPath)
+        {
+            using (var scope = ScopeProvider.CreateScope())
+            {
+                ((StylesheetRepository) _stylesheetRepository).DeleteFolder(folderPath);
+                scope.Complete();
             }
         }
 
@@ -332,7 +349,7 @@ namespace Umbraco.Core.Services.Implement
 
             var evtMsgs = EventMessagesFactory.Get();
 
-            //fixme: This isn't pretty because we we're required to maintain backwards compatibility so we could not change
+            // TODO: This isn't pretty because we we're required to maintain backwards compatibility so we could not change
             // the event args here. The other option is to create a different event with different event
             // args specifically for this method... which also isn't pretty. So fix this in v8!
             var additionalData = new Dictionary<string, object>
@@ -435,7 +452,7 @@ namespace Umbraco.Core.Services.Implement
         /// <summary>
         /// Gets a <see cref="ITemplate"/> object by its identifier.
         /// </summary>
-        /// <param name="id">The identifer of the template.</param>
+        /// <param name="id">The identifier of the template.</param>
         /// <returns>The <see cref="ITemplate"/> object matching the identifier, or null.</returns>
         public ITemplate GetTemplate(int id)
         {
@@ -553,27 +570,6 @@ namespace Umbraco.Core.Services.Implement
 
                 Audit(AuditType.Save, userId, -1, ObjectTypes.GetName(UmbracoObjectTypes.Template));
                 scope.Complete();
-            }
-        }
-
-        /// <summary>
-        /// This checks what the default rendering engine is set in config but then also ensures that there isn't already
-        /// a template that exists in the opposite rendering engine's template folder, then returns the appropriate
-        /// rendering engine to use.
-        /// </summary>
-        /// <returns></returns>
-        /// <remarks>
-        /// The reason this is required is because for example, if you have a master page file already existing under ~/masterpages/Blah.aspx
-        /// and then you go to create a template in the tree called Blah and the default rendering engine is MVC, it will create a Blah.cshtml
-        /// empty template in ~/Views. This means every page that is using Blah will go to MVC and render an empty page.
-        /// This is mostly related to installing packages since packages install file templates to the file system and then create the
-        /// templates in business logic. Without this, it could cause the wrong rendering engine to be used for a package.
-        /// </remarks>
-        public RenderingEngine DetermineTemplateRenderingEngine(ITemplate template)
-        {
-            using (var scope = ScopeProvider.CreateScope(autoComplete: true))
-            {
-                return _templateRepository.DetermineTemplateRenderingEngine(template);
             }
         }
 
@@ -1043,7 +1039,7 @@ namespace Umbraco.Core.Services.Implement
             _auditRepository.Save(new AuditItem(objectId, type, userId, entityType));
         }
 
-        //TODO Method to change name and/or alias of view/masterpage template
+        // TODO: Method to change name and/or alias of view template
 
         #region Event Handlers
 

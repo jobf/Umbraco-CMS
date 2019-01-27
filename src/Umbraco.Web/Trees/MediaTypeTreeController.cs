@@ -4,15 +4,14 @@ using System.Linq;
 using System.Net.Http.Formatting;
 using AutoMapper;
 using Umbraco.Core;
-using Umbraco.Core.Configuration;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.Entities;
 using Umbraco.Web.Models.Trees;
 using Umbraco.Web.WebApi.Filters;
 using Umbraco.Core.Services;
 using Umbraco.Web.Actions;
 using Umbraco.Web.Models.ContentEditing;
-
-using Umbraco.Web.Search;
 
 namespace Umbraco.Web.Trees
 {
@@ -37,12 +36,12 @@ namespace Umbraco.Web.Trees
                         var node = CreateTreeNode(dt.Id.ToString(), id, queryStrings, dt.Name, "icon-folder", dt.HasChildren, "");
                         node.Path = dt.Path;
                         node.NodeType = "container";
-                        //TODO: This isn't the best way to ensure a noop process for clicking a node but it works for now.
+                        // TODO: This isn't the best way to ensure a no operation process for clicking a node but it works for now.
                         node.AdditionalData["jsClickCallback"] = "javascript:void(0);";
                         return node;
                     }));
 
-            //if the request is for folders only then just return
+            // if the request is for folders only then just return
             if (queryStrings["foldersonly"].IsNullOrWhiteSpace() == false && queryStrings["foldersonly"] == "1") return nodes;
 
             nodes.AddRange(
@@ -51,7 +50,7 @@ namespace Umbraco.Web.Trees
                     .Select(dt =>
                     {
                         // since 7.4+ child type creation is enabled by a config option. It defaults to on, but can be disabled if we decide to.
-                        // need this check to keep supporting sites where childs have already been created.
+                        // need this check to keep supporting sites where children have already been created.
                         var hasChildren = dt.HasChildren;
                         var node = CreateTreeNode(dt, Constants.ObjectTypes.MediaType, id, queryStrings, "icon-thumbnails", hasChildren);
 
@@ -66,11 +65,11 @@ namespace Umbraco.Web.Trees
         {
             var menu = new MenuItemCollection();
 
-            var enableInheritedMediaTypes = UmbracoConfig.For.UmbracoSettings().Content.EnableInheritedMediaTypes;
+            var enableInheritedMediaTypes = Current.Configs.Settings().Content.EnableInheritedMediaTypes;
 
             if (id == Constants.System.Root.ToInvariantString())
             {
-                //set the default to create
+                // set the default to create
                 menu.DefaultMenuAlias = ActionNew.ActionAlias;
 
                 // root actions
@@ -82,7 +81,7 @@ namespace Umbraco.Web.Trees
             var container = Services.EntityService.Get(int.Parse(id), UmbracoObjectTypes.MediaTypeContainer);
             if (container != null)
             {
-                //set the default to create
+                // set the default to create
                 menu.DefaultMenuAlias = ActionNew.ActionAlias;
 
                 menu.Items.Add<ActionNew>(Services.TextService, opensDialog: true);
@@ -94,7 +93,7 @@ namespace Umbraco.Web.Trees
 
                 if (container.HasChildren == false)
                 {
-                    //can delete doc type
+                    // can delete doc type
                     menu.Items.Add<ActionDelete>(Services.TextService, opensDialog: true);
                 }
                 menu.Items.Add(new RefreshNode(Services.TextService, true));
@@ -108,7 +107,7 @@ namespace Umbraco.Web.Trees
                 {
                     menu.Items.Add<ActionNew>(Services.TextService, opensDialog: true);
 
-                    //no move action if this is a child doc type
+                    // no move action if this is a child doc type
                     if (parent == null)
                     {
                         menu.Items.Add<ActionMove>(Services.TextService, true, opensDialog: true);
@@ -117,7 +116,7 @@ namespace Umbraco.Web.Trees
                 else
                 {
                     menu.Items.Add<ActionMove>(Services.TextService, opensDialog: true);
-                    //no move action if this is a child doc type
+                    // no move action if this is a child doc type
                     if (parent == null)
                     {
                         menu.Items.Add<ActionMove>(Services.TextService, true, opensDialog: true);
@@ -133,10 +132,11 @@ namespace Umbraco.Web.Trees
             return menu;
         }
 
-        public IEnumerable<SearchResultItem> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
+        public IEnumerable<SearchResultEntity> Search(string query, int pageSize, long pageIndex, out long totalFound, string searchFrom = null)
         {
-            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.MediaType, pageIndex, pageSize, out totalFound, filter: query);
-            return Mapper.Map<IEnumerable<SearchResultItem>>(results);
+            var results = Services.EntityService.GetPagedDescendants(UmbracoObjectTypes.MediaType, pageIndex, pageSize, out totalFound,
+                filter: SqlContext.Query<IUmbracoEntity>().Where(x => x.Name.Contains(query)));
+            return Mapper.Map<IEnumerable<SearchResultEntity>>(results);
         }
     }
 }

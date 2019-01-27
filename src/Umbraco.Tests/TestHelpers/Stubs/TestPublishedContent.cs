@@ -15,7 +15,7 @@ namespace Umbraco.Tests.TestHelpers.Stubs
         }
 
         public int Id { get; }
-        public int TemplateId { get; set; }
+        public int? TemplateId { get; set; }
         public int SortOrder { get; set; }
         public string Name { get; set; }
         public IVariationContextAccessor VariationContextAccessor { get; set; }
@@ -47,7 +47,8 @@ namespace Umbraco.Tests.TestHelpers.Stubs
         public string Url { get; set; }
         public string GetUrl(string culture = null) => throw new NotSupportedException();
         public PublishedItemType ItemType => ContentType.ItemType;
-        public bool IsDraft { get; set; }
+        public bool IsDraft(string culture = null) => false;
+        public bool IsPublished(string culture = null) => true;
         public IPublishedContent Parent { get; set; }
         public IEnumerable<IPublishedContent> Children { get; set; }
 

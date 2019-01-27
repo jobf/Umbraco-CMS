@@ -11,8 +11,8 @@ using System.Web.Mvc;
 using AutoMapper;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Identity;
 using Umbraco.Core.Security;
@@ -25,6 +25,7 @@ using Umbraco.Web.WebApi;
 using Umbraco.Web.WebApi.Filters;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Persistence;
 using Umbraco.Web.Composing;
 using IUser = Umbraco.Core.Models.Membership.IUser;
 
@@ -39,18 +40,27 @@ namespace Umbraco.Web.Editors
     [IsBackOffice]
     public class AuthenticationController : UmbracoApiController
     {
-
-        //fixme inject these
         private BackOfficeUserManager<BackOfficeIdentityUser> _userManager;
         private BackOfficeSignInManager _signInManager;
-        protected BackOfficeUserManager<BackOfficeIdentityUser> UserManager
-        {
-            get { return _userManager ?? (_userManager = TryGetOwinContext().Result.GetBackOfficeUserManager()); }
-        }
-        protected BackOfficeSignInManager SignInManager
-        {
-            get { return _signInManager ?? (_signInManager = TryGetOwinContext().Result.GetBackOfficeSignInManager()); }
-        }
+
+        /// <summary>
+        /// Initializes a new instance of the new <see cref="AuthenticationController"/> class with auto dependencies.
+        /// </summary>
+        public AuthenticationController()
+        { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthenticationController"/> class with all its dependencies.
+        /// </summary>
+        public AuthenticationController(IGlobalSettings globalSettings, UmbracoContext umbracoContext, ISqlContext sqlContext, ServiceContext services, AppCaches appCaches, IProfilingLogger logger, IRuntimeState runtimeState)
+            : base(globalSettings, umbracoContext, sqlContext, services, appCaches, logger, runtimeState)
+        { }
+
+        protected BackOfficeUserManager<BackOfficeIdentityUser> UserManager => _userManager
+            ?? (_userManager = TryGetOwinContext().Result.GetBackOfficeUserManager());
+
+        protected BackOfficeSignInManager SignInManager => _signInManager
+            ?? (_signInManager = TryGetOwinContext().Result.GetBackOfficeSignInManager());
 
         /// <summary>
         /// Returns the configuration for the backoffice user membership provider - used to configure the change password dialog
@@ -59,8 +69,8 @@ namespace Umbraco.Web.Editors
         [WebApi.UmbracoAuthorize(requireApproval: false)]
         public IDictionary<string, object> GetMembershipProviderConfig()
         {
-            //TODO: Check if the current PasswordValidator is an IMembershipProviderPasswordValidator, if
-            //it's not than we should return some generic defaults
+            // TODO: Check if the current PasswordValidator is an IMembershipProviderPasswordValidator, if
+            // it's not than we should return some generic defaults
             var provider = Core.Security.MembershipProviderExtensions.GetUsersMembershipProvider();
             return provider.GetConfiguration(Services.UserService);
         }
@@ -184,7 +194,7 @@ namespace Umbraco.Web.Editors
 
             if (user.IsApproved)
             {
-                //if they are approved, than they are no longer invited and we can return an error
+                // if they are approved, than they are no longer invited and we can return an error
                 throw new HttpResponseException(Request.CreateUserNoAccessResponse());
             }
 
@@ -192,14 +202,14 @@ namespace Umbraco.Web.Editors
             var httpContextAttempt = TryGetHttpContext();
             if (httpContextAttempt.Success)
             {
-                //set their remaining seconds
+                // set their remaining seconds
                 result.SecondsUntilTimeout = httpContextAttempt.Result.GetRemainingAuthSeconds();
             }
 
             return result;
         }
 
-        //TODO: This should be on the CurrentUserController?
+        // TODO: This should be on the CurrentUserController?
         [WebApi.UmbracoAuthorize]
         [ValidateAngularAntiForgeryToken]
         public async Task<Dictionary<string, string>> GetCurrentUserLinkedLogins()
@@ -218,8 +228,8 @@ namespace Umbraco.Web.Editors
             var http = EnsureHttpContext();
             var owinContext = TryGetOwinContext().Result;
 
-            //Sign the user in with username/password, this also gives a chance for developers to
-            //custom verify the credentials and auto-link user accounts with a custom IBackOfficePasswordChecker
+            // Sign the user in with username/password, this also gives a chance for developers to
+            // custom verify the credentials and auto-link user accounts with a custom IBackOfficePasswordChecker
             var result = await SignInManager.PasswordSignInAsync(
                 loginModel.Username, loginModel.Password, isPersistent: true, shouldLockout: true);
 
@@ -227,7 +237,7 @@ namespace Umbraco.Web.Editors
             {
                 case SignInStatus.Success:
 
-                    //get the user
+                    // get the user
                     var user = Services.UserService.GetByUsername(loginModel.Username);
                     UserManager.RaiseLoginSuccessEvent(user.Id);
 
@@ -258,7 +268,7 @@ namespace Umbraco.Web.Editors
 
                     var attemptedUser = Services.UserService.GetByUsername(loginModel.Username);
 
-                    //create a with information to display a custom two factor send code view
+                    // create a with information to display a custom two factor send code view
                     var verifyResponse = Request.CreateResponse(HttpStatusCode.PaymentRequired, new
                     {
                         twoFactorView = twofactorView,
@@ -272,10 +282,10 @@ namespace Umbraco.Web.Editors
                 case SignInStatus.LockedOut:
                 case SignInStatus.Failure:
                 default:
-                    //return BadRequest (400), we don't want to return a 401 because that get's intercepted
+                    // return BadRequest (400), we don't want to return a 401 because that get's intercepted
                     // by our angular helper because it thinks that we need to re-perform the request once we are
-                    // authorized and we don't want to return a 403 because angular will show a warning msg indicating
-                    // that the user doesn't have access to perform this function, we just want to return a normal invalid msg.
+                    // authorized and we don't want to return a 403 because angular will show a warning message indicating
+                    // that the user doesn't have access to perform this function, we just want to return a normal invalid message.
                     throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
         }
@@ -290,7 +300,7 @@ namespace Umbraco.Web.Editors
         {
             // If this feature is switched off in configuration the UI will be amended to not make the request to reset password available.
             // So this is just a server-side secondary check.
-            if (UmbracoConfig.For.UmbracoSettings().Security.AllowPasswordReset == false)
+            if (Current.Configs.Settings().Security.AllowPasswordReset == false)
             {
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
@@ -304,13 +314,13 @@ namespace Umbraco.Web.Editors
                     var callbackUrl = ConstructCallbackUrl(identityUser.Id, code);
 
                     var message = Services.TextService.Localize("resetPasswordEmailCopyFormat",
-                        //Ensure the culture of the found user is used for the email!
+                        // Ensure the culture of the found user is used for the email!
                         UserExtensions.GetUserCulture(identityUser.Culture, Services.TextService, GlobalSettings),
                         new[] { identityUser.UserName, callbackUrl });
 
                     await UserManager.SendEmailAsync(identityUser.Id,
                         Services.TextService.Localize("login/resetPasswordEmailCopySubject",
-                            //Ensure the culture of the found user is used for the email!
+                            // Ensure the culture of the found user is used for the email!
                             UserExtensions.GetUserCulture(identityUser.Culture, Services.TextService, GlobalSettings)),
                         message);
 
@@ -322,7 +332,7 @@ namespace Umbraco.Web.Editors
         }
 
         /// <summary>
-        /// Used to retrived the 2FA providers for code submission
+        /// Used to retrieve the 2FA providers for code submission
         /// </summary>
         /// <returns></returns>
         [SetAngularAntiForgeryTokens]
@@ -407,7 +417,7 @@ namespace Umbraco.Web.Editors
                 {
                     Logger.Info<AuthenticationController>("User {UserId} is currently locked out, unlocking and resetting AccessFailedCount", model.UserId);
 
-                    //var user = await UserManager.FindByIdAsync(model.UserId);
+                    //// var user = await UserManager.FindByIdAsync(model.UserId);
                     var unlockResult = await UserManager.SetLockoutEndDateAsync(model.UserId, DateTimeOffset.Now);
                     if (unlockResult.Succeeded == false)
                     {
@@ -421,26 +431,26 @@ namespace Umbraco.Web.Editors
                     }
                 }
 
-                //They've successfully set their password, we can now update their user account to be confirmed
-                //if user was only invited, then they have not been approved
-                //but a successful forgot password flow (e.g. if their token had expired and they did a forgot password instead of request new invite)
-                //means we have verified their email
+                // They've successfully set their password, we can now update their user account to be confirmed
+                // if user was only invited, then they have not been approved
+                // but a successful forgot password flow (e.g. if their token had expired and they did a forgot password instead of request new invite)
+                // means we have verified their email
                 if (!UserManager.IsEmailConfirmed(model.UserId))
                 {
                     await UserManager.ConfirmEmailAsync(model.UserId, model.ResetCode);
                 }
 
-                //if the user is invited, enable their account on forgot password
+                // if the user is invited, enable their account on forgot password
                 var identityUser = await UserManager.FindByIdAsync(model.UserId);
-                //invited is not approved, never logged in, invited date present
+                // invited is not approved, never logged in, invited date present
                 /*
                 if (LastLoginDate == default && IsApproved == false && InvitedDate != null)
                     return UserState.Invited;
                 */
-                if (identityUser != null && !identityUser.IsApproved) 
+                if (identityUser != null && !identityUser.IsApproved)
                 {
                     var user = Services.UserService.GetByUsername(identityUser.UserName);
-                    //also check InvitedDate and never logged in, otherwise this would allow a disabled user to reactivate their account with a forgot password
+                    // also check InvitedDate and never logged in, otherwise this would allow a disabled user to reactivate their account with a forgot password
                     if (user.LastLoginDate == default && user.InvitedDate != null)
                     {
                         user.IsApproved = true;
@@ -495,13 +505,13 @@ namespace Umbraco.Web.Editors
             if (principal == null) throw new ArgumentNullException(nameof(principal));
 
             var userDetail = Mapper.Map<UserDetail>(user);
-            //update the userDetail and set their remaining seconds
+            // update the userDetail and set their remaining seconds
             userDetail.SecondsUntilTimeout = TimeSpan.FromMinutes(GlobalSettings.TimeOutInMinutes).TotalSeconds;
 
-            //create a response with the userDetail object
+            // create a response with the userDetail object
             var response = Request.CreateResponse(HttpStatusCode.OK, userDetail);
 
-            //ensure the user is set for the current request
+            // ensure the user is set for the current request
             Request.SetPrincipalForRequest(principal);
 
             return response;

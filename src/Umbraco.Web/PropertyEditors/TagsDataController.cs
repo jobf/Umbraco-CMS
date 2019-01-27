@@ -10,14 +10,15 @@ namespace Umbraco.Web.PropertyEditors
     /// </summary>
     /// <remarks>
     /// DO NOT inherit from UmbracoAuthorizedJsonController since we don't want to use the angularized
-    /// json formatter as it causes probs.
+    /// json formatter as it causes problems.
     /// </remarks>
     [PluginController("UmbracoApi")]
     public class TagsDataController : UmbracoAuthorizedApiController
     {
-        public IEnumerable<TagModel> GetTags(string tagGroup)
+        public IEnumerable<TagModel> GetTags(string tagGroup, string culture)
         {
-            return Umbraco.TagQuery.GetAllTags(tagGroup);
+            if (culture == string.Empty) culture = null;
+            return Umbraco.TagQuery.GetAllTags(tagGroup, culture);
         }
     }
 }

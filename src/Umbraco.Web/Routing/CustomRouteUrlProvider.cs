@@ -15,7 +15,7 @@ namespace Umbraco.Web.Routing
         /// <summary>
         /// This will return the URL that is returned by the assigned custom <see cref="IPublishedContent"/> if this is a custom route
         /// </summary>
-        public string GetUrl(UmbracoContext umbracoContext, IPublishedContent content, UrlProviderMode mode, string culture, Uri current)
+        public UrlInfo GetUrl(UmbracoContext umbracoContext, IPublishedContent content, UrlProviderMode mode, string culture, Uri current)
         {
             if (umbracoContext?.PublishedRequest?.PublishedContent == null) return null;
             if (umbracoContext.HttpContext?.Request?.RequestContext?.RouteData?.DataTokens == null) return null;
@@ -25,14 +25,16 @@ namespace Umbraco.Web.Routing
             //If we get this far, it means it's a custom route with published content assigned, check if the id being requested for is the same id as the assigned published content
             //NOTE: This looks like it might cause an infinite loop because PublishedContentBase.Url calls into UmbracoContext.Current.UrlProvider.GetUrl which calls back into the IUrlProvider pipeline
             // but the specific purpose of this is that a developer is using their own IPublishedContent that returns a specific Url and doesn't go back into the UrlProvider pipeline.
-            //TODO: We could put a try/catch here just in case, else we could do some reflection checking to see if the implementation is PublishedContentBase and the Url property is not overridden.
-            return content.Id == umbracoContext.PublishedRequest.PublishedContent.Id
-                ? umbracoContext.PublishedRequest.PublishedContent.GetUrl(culture)
-                : null;
+            // TODO: We could put a try/catch here just in case, else we could do some reflection checking to see if the implementation is PublishedContentBase and the Url property is not overridden.
+            return UrlInfo.Url(
+                content.Id == umbracoContext.PublishedRequest.PublishedContent.Id
+                    ? umbracoContext.PublishedRequest.PublishedContent.GetUrl(culture)
+                    : null,
+                culture);
         }
 
         /// <summary>
-        /// This always returns null because this url provider is used purely to deal with Umbraco custom routes with
+        /// This always returns an empty result because this url provider is used purely to deal with Umbraco custom routes with
         /// UmbracoVirtualNodeRouteHandler, we really only care about the normal URL so that RedirectToCurrentUmbracoPage() works
         /// with SurfaceControllers
         /// </summary>
@@ -40,9 +42,9 @@ namespace Umbraco.Web.Routing
         /// <param name="id"></param>
         /// <param name="current"></param>
         /// <returns></returns>
-        public IEnumerable<string> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
+        public IEnumerable<UrlInfo> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
         {
-            return null;
+            yield break;
         }
     }
 }
